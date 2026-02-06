@@ -3,12 +3,9 @@
 <head> 
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>MiAlacena Pro - Inventario Inteligente</title> 
+    <title>MiAlacena Pro</title> 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#059669">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon512_rounded.png">
     <script src="https://cdn.tailwindcss.com"></script> 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script> 
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script> 
@@ -17,466 +14,123 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'); 
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; } 
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); } 
-        .no-scrollbar::-webkit-scrollbar { display: none; } 
-        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2); } 
-        @keyframes pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } } 
+        .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2); } 
+        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style> 
 </head> 
 <body class="bg-slate-50"> 
     <div id="root"></div> 
- 
-    <!-- Firebase SDKs --> 
-    <script type="module"> 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js"; 
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js"; 
-        import { getFirestore, doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js"; 
- 
-        try { 
-            /* global __firebase_config */
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = initializeApp(firebaseConfig); 
-                const auth = getAuth(app); 
-                const db = getFirestore(app); 
-    
-                window.FirebaseSDK = {  
-                    auth, db, signInWithCustomToken, signInAnonymously,  
-                    onAuthStateChanged, collection, onSnapshot, addDoc,  
-                    updateDoc, deleteDoc, doc  
-                }; 
-                window.dispatchEvent(new Event('firebase-ready')); 
-            } else {
-                console.warn("Firebase configuration not found.");
-                window.dispatchEvent(new Event('firebase-error'));
-            }
-        } catch (err) { 
-            console.error("Firebase Init Error:", err); 
-            window.dispatchEvent(new Event('firebase-error'));
-        } 
-    </script> 
- 
-    <script type="text/babel"> 
-        /* global React, ReactDOM, __app_id, __initial_auth_token */
-        const { useState, useEffect } = React; 
-         
-        const CustomIcon = ({ name, size = 20, className = "" }) => { 
-            const icons = { 
-                ShoppingBasket: ( 
-                    <path d="m5 11 4-7m10 7-4-7M2 11h20m-2 0-1.6 8.1c-.2 1-.9 1.9-2 1.9H7.6c-1.1 0-1.8-.9-2-1.9L4 11m4 4v2m4-2v2m4-2v2" /> 
-                ), 
-                Settings: ( 
-                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 0-2-2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z" /> 
-                ), 
-                LayoutGrid: ( 
-                    <React.Fragment> 
-                        <rect width="7" height="7" x="3" y="3" rx="1" /> 
-                        <rect width="7" height="7" x="14" y="3" rx="1" /> 
-                        <rect width="7" height="7" x="14" y="14" rx="1" /> 
-                        <rect width="7" height="7" x="3" y="14" rx="1" /> 
-                    </React.Fragment> 
-                ), 
-                ChefHat: ( 
-                    <React.Fragment> 
-                        <path d="M6 18h12a2 2 0 0 1 2 2v1H4v-1a2 2 0 0 1 2-2Z" /> 
-                        <path d="M9 18V5a4 4 0 1 1 6 0v13" /> 
-                        <path d="M17 10a4 4 0 1 1-1.5 7.5" /> 
-                        <path d="M8.5 17.5a4 4 0 1 1-1.5-7.5" /> 
-                    </React.Fragment> 
-                ), 
-                Plus: <path d="M5 12h14m-7-7v14" />, 
-                Minus: <path d="M5 12h14" />, 
-                ShoppingCart: ( 
-                    <React.Fragment> 
-                        <circle cx="8" cy="21" r="1" /> 
-                        <circle cx="19" cy="21" r="1" /> 
-                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /> 
-                    </React.Fragment> 
-                ), 
-                Camera: ( 
-                    <React.Fragment> 
-                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /> 
-                        <circle cx="12" cy="13" r="3" /> 
-                    </React.Fragment> 
-                ), 
-                ArrowLeft: <path d="m12 19-7-7 7-7m5 7H5" />, 
-                Download: ( 
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3" /> 
-                ), 
-                Share2: ( 
-                    <React.Fragment> 
-                        <circle cx="18" cy="5" r="3" /> 
-                        <circle cx="6" cy="12" r="3" /> 
-                        <circle cx="18" cy="19" r="3" /> 
-                        <path d="m8.59 13.51 6.83 3.98m-.01-10.98-6.82 3.98" /> 
-                    </React.Fragment> 
-                ), 
-                Flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />, 
-                Box: ( 
-                    <React.Fragment> 
-                        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /> 
-                        <path d="m3.3 7 8.7 5 8.7-5M12 22V12" /> 
-                    </React.Fragment> 
-                ), 
-                Beer: ( 
-                    <React.Fragment> 
-                        <path d="M17 11h1a3 3 0 0 1 0 6h-1" /> 
-                        <path d="M9 12v6" /> 
-                        <path d="M13 12v6" /> 
-                        <path d="M14 7.5c-1 0-1.44.5-3 .5s-2-.5-3-.5-1.72.5-2.5.5a2.5 2.5 0 0 1 0-5c.78 0 1.57.5 2.5.5S9.44 3 11 3s2 .5 3 .5 1.72-.5 2.5-.5a2.5 2.5 0 0 1 0 5c-.78 0-1.5-.5-2.5-.5Z" /> 
-                        <path d="M5 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8" /> 
-                    </React.Fragment> 
-                ), 
-                Beef: ( 
-                    <React.Fragment> 
-                        <circle cx="12.5" cy="8.5" r="2.5" /> 
-                        <path d="M15 2H9a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Z" /> 
-                        <path d="M7 14h10" /> 
-                        <path d="M7 18h10" /> 
-                    </React.Fragment> 
-                ) 
-            }; 
- 
-            return ( 
-                <svg  
-                    width={size}  
-                    height={size}  
-                    viewBox="0 0 24 24"  
-                    fill="none"  
-                    stroke="currentColor"  
-                    strokeWidth="2"  
-                    strokeLinecap="round"  
-                    strokeLinejoin="round"  
-                    className={className} 
-                > 
-                    {icons[name] || icons.Box} 
-                </svg> 
-            ); 
-        }; 
- 
-        const TRANSLATIONS = { 
-            es: { title: 'MiAlacena', stock: 'Stock', chef: 'Chef IA', add: 'Añadir', list: 'Lista', totalItems: 'Productos', critical: 'Crítico', searchPlaceholder: 'Buscar...', newProduct: 'Nuevo Producto', save: 'GUARDAR', online: 'Nube Activa', recipeBtn: 'RECETA IA', chefSub: 'Cocinando con lo que tienes.', settings: 'Ajustes', language: 'Idioma', export: 'Exportar Datos', share: 'Compartir Lista' }, 
-            en: { title: 'MyPantry', stock: 'Stock', chef: 'AI Chef', add: 'Add', list: 'List', totalItems: 'Items', critical: 'Critical', searchPlaceholder: 'Search...', newProduct: 'New Item', save: 'SAVE', online: 'Cloud Active', recipeBtn: 'AI RECIPE', chefSub: 'Cooking with what you have.', settings: 'Settings', language: 'Language', export: 'Export Data', share: 'Share List' }, 
-            pt: { title: 'MinhaDespensa', stock: 'Estoque', chef: 'Chef IA', add: 'Adicionar', list: 'Lista', totalItems: 'Itens', critical: 'Crítico', searchPlaceholder: 'Buscar...', newProduct: 'Novo Item', save: 'SALVAR', online: 'Nuvem Ativa', recipeBtn: 'RECEITA IA', chefSub: 'Cozinhando con o que tem.', settings: 'Configurações', language: 'Idioma', export: 'Exportar Datos', share: 'Compartilhar' }, 
-            it: { title: 'MiaDispensa', stock: 'Scorta', chef: 'Chef IA', add: 'Aggiungi', list: 'Lista', totalItems: 'Articoli', critical: 'Critico', searchPlaceholder: 'Cerca...', newProduct: 'Nuovo Articolo', save: 'SALVA', online: 'Cloud Attivo', recipeBtn: 'RICETTA IA', chefSub: 'Cucinare con quello que hai.', settings: 'Impostazioni', language: 'Lingua', export: 'Esporta Dati', share: 'Condividi' }, 
-            fr: { title: 'MonGardeManger', stock: 'Stock', chef: 'Chef IA', add: 'Ajouter', list: 'Liste', totalItems: 'Articles', critical: 'Critique', searchPlaceholder: 'Chercher...', newProduct: 'Nouvel Article', save: 'ENREGISTRER', online: 'Cloud Actif', recipeBtn: 'RECETTE IA', chefSub: 'Cuisiner avec ce que vous avez.', settings: 'Paramètres', language: 'Langue', export: 'Exporter', share: 'Partager' }, 
-            de: { title: 'MeineVorratskammer', stock: 'Vorrat', chef: 'KI Chef', add: 'Hinzufügen', list: 'Liste', totalItems: 'Artikel', critical: 'Kritisch', searchPlaceholder: 'Suche...', newProduct: 'Neuer Artikel', save: 'SPEICHERN', online: 'Cloud Aktiv', recipeBtn: 'KI REZEPT', chefSub: 'Kochen mit dem, was da ist.', settings: 'Einstellungen', language: 'Sprache', export: 'Exportieren', share: 'Teilen' }, 
-            zh: { title: '我的食品室', stock: '庫存', chef: 'AI 厨师', add: '添加', list: '列表', totalItems: '物品', critical: '紧缺', searchPlaceholder: '搜索...', newProduct: '新物品', save: '保存', online: '云同步', recipeBtn: 'AI 食谱', chefSub: '用现有的食材烹饪。', settings: '设置', language: '语言', export: '导出数据', share: '分享列表' }, 
-            ja: { title: 'マイパントリー', stock: '在庫', chef: 'AIシェフ', add: '追加', list: 'リスト', totalItems: 'アイテム', critical: '不足', searchPlaceholder: '検索...', newProduct: '新規アイテム', save: '保存', online: 'クラウド有効', recipeBtn: 'AIレシピ', chefSub: 'あるもので料理する。', settings: '設定', language: '言語', export: 'データ出力', share: '共有' } 
-        }; 
- 
-        const SMART_ICONS = { 
-            'uvas': '🍇', 'manzana': '🍎', 'platano': '🍌', 'naranja': '🍊', 'limon': '🍋', 'tomate': '🍅', 'zanahoria': '🥕', 
-            'huevo': '🥚', 'leche': '🥛', 'carne': '🥩', 'pollo': '🍗', 'pescado': '🐟', 'agua': '💧', 'cerveza': '🍺', 
-            'cafe': '☕', 'vino': '🍷', 'pan': '🍞', 'arroz': '🍚', 'pasta': '🍝', 'aceite': '🫗', 'sal': '🧂' 
-        }; 
- 
-        const IconRenderer = ({ name, category, size = 20 }) => { 
-            const lowerName = (name || "").toLowerCase(); 
-            const emoji = Object.entries(SMART_ICONS).find(([k]) => lowerName.includes(k))?.[1]; 
-            if (emoji) return <span style={{ fontSize: size + 4 }}>{emoji}</span>; 
-            const iconName = category === 'Bebidas' ? 'Beer' : category === 'Carnes y Lácteos' ? 'Beef' : 'Box'; 
-            return <CustomIcon name={iconName} size={size} />; 
-        }; 
- 
-        function App() { 
-            const [isFirebaseReady, setIsFirebaseReady] = useState(!!window.FirebaseSDK); 
-            const [firebaseError, setFirebaseError] = useState(false);
-            const [user, setUser] = useState(null); 
-            const [products, setProducts] = useState([]); 
-            const [activeTab, setActiveTab] = useState('pantry'); 
-            const [lang, setLang] = useState('es'); 
-            const [searchTerm, setSearchTerm] = useState(''); 
-            const [showSettings, setShowSettings] = useState(false); 
-            const [showCameraMock, setShowCameraMock] = useState(false);
-            const [newProduct, setNewProduct] = useState({ name: '', category: 'Despensa', currentStock: 1, minStock: 1 }); 
- 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'mialacena-pro'; 
-            const t = TRANSLATIONS[lang]; 
- 
-            useEffect(() => { 
-                const handleReady = () => setIsFirebaseReady(true); 
-                const handleError = () => setFirebaseError(true);
-                window.addEventListener('firebase-ready', handleReady); 
-                window.addEventListener('firebase-error', handleError);
-                return () => {
-                    window.removeEventListener('firebase-ready', handleReady); 
-                    window.removeEventListener('firebase-error', handleError);
+
+    <script type="module">
+        // IMPORTANTE: Configura tus credenciales aquí o mediante una variable global
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO_ID",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "ID_SENDER",
+            appId: "ID_APP"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.FirebaseSDK = { 
+            db: getFirestore(app), auth: getAuth(app), 
+            collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc,
+            signInAnonymously, onAuthStateChanged 
+        };
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [products, setProducts] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('pantry');
+            const [lang, setLang] = useState('es');
+
+            useEffect(() => {
+                const init = () => {
+                    const { auth, signInAnonymously, onAuthStateChanged, db, collection, onSnapshot } = window.FirebaseSDK;
+                    signInAnonymously(auth).catch(console.error);
+                    
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            const colRef = collection(db, 'pantry');
+                            onSnapshot(colRef, (snapshot) => {
+                                setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                                setLoading(false);
+                            });
+                        }
+                    });
                 };
-            }, []); 
- 
-            useEffect(() => { 
-                if (!isFirebaseReady) return; 
-                const { auth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } = window.FirebaseSDK; 
-                const initAuth = async () => { 
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { 
-                            await signInWithCustomToken(auth, __initial_auth_token); 
-                        } else { await signInAnonymously(auth); } 
-                    } catch (e) { console.error("Auth error:", e); }
-                }; 
-                initAuth(); 
-                const unsubscribe = onAuthStateChanged(auth, setUser); 
-                return () => unsubscribe(); 
-            }, [isFirebaseReady]); 
- 
-            useEffect(() => { 
-                if (!user || !isFirebaseReady) return; 
-                const { db, collection, onSnapshot } = window.FirebaseSDK; 
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'pantry'); 
-                const unsubscribe = onSnapshot(q, (snapshot) => { 
-                    const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); 
-                    setProducts(list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))); 
-                }, (error) => console.error("Snapshot error:", error)); 
-                return () => unsubscribe(); 
-            }, [user, isFirebaseReady, appId]); 
- 
-            const exportData = () => { 
-                const dataStr = JSON.stringify(products, null, 2); 
-                const blob = new Blob([dataStr], { type: "application/json" }); 
-                const url = URL.createObjectURL(blob); 
-                const link = document.createElement('a'); 
-                link.href = url; 
-                link.download = `MiAlacena_Export_${new Date().toISOString().slice(0,10)}.json`; 
-                link.click(); 
-            }; 
- 
-            const shareList = () => { 
-                const criticalItems = products.filter(p => p.currentStock <= p.minStock); 
-                const text = `🛒 *Lista de Compras (MiAlacena)*\n\nNecesito comprar:\n${criticalItems.map(i => `- ${i.name} (${i.currentStock}/${i.minStock})`).join('\n')}`; 
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
-            }; 
- 
-            const saveItem = async () => { 
-                if (!newProduct.name || !isFirebaseReady) return; 
-                const { db, collection, addDoc } = window.FirebaseSDK; 
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'pantry'), { ...newProduct, updatedAt: Date.now() }); 
-                setNewProduct({ name: '', category: 'Despensa', currentStock: 1, minStock: 1 }); 
-                setActiveTab('pantry'); 
-            }; 
- 
-            const updateStock = async (id, val) => { 
-                if (!isFirebaseReady) return; 
-                const { db, doc, updateDoc } = window.FirebaseSDK; 
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pantry', id), { currentStock: val, updatedAt: Date.now() }); 
-            }; 
+                window.addEventListener('firebase-ready', init);
+            }, []);
 
-            const resetViews = () => {
-                setShowSettings(false);
-                setShowCameraMock(false);
-            };
+            if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold">Iniciando Alacena...</div>;
 
-            const changeTab = (tab) => {
-                setActiveTab(tab);
-                resetViews();
-            };
- 
-            if (firebaseError) return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-10 text-center space-y-4">
-                    <div className="text-rose-500 bg-rose-50 p-6 rounded-full">
-                        <CustomIcon name="Settings" size={48} />
-                    </div>
-                    <h2 className="text-xl font-black text-slate-800">Error de Conexión</h2>
-                    <p className="text-slate-500 text-sm">No se pudo inicializar Firebase. Por favor, asegúrate de que la configuración sea correcta.</p>
+            return (
+                <div className="max-w-md mx-auto min-h-screen pb-24 px-4">
+                    <header className="py-8 flex justify-between items-center">
+                        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">MiAlacena<span className="text-emerald-500">.</span></h1>
+                        <div className="flex gap-2">
+                             <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="bg-white px-3 py-1 rounded-full shadow-sm text-xs font-bold uppercase border">{lang}</button>
+                        </div>
+                    </header>
+
+                    {activeTab === 'pantry' ? (
+                        <div className="grid gap-3">
+                            {products.map(p => (
+                                <div key={p.id} className="glass p-4 rounded-3xl border border-white shadow-sm flex justify-between items-center animate-pop">
+                                    <div>
+                                        <h3 className="font-bold text-slate-700">{p.name}</h3>
+                                        <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>Stock: {p.stock}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => updateQty(p.id, p.stock - 1)} className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-lg">-</button>
+                                        <button onClick={() => updateQty(p.id, p.stock + 1)} className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-lg">+</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="animate-pop bg-white p-6 rounded-[2.5rem] shadow-xl border">
+                             <h2 className="text-xl font-bold mb-4">Añadir Producto</h2>
+                             <input id="pName" type="text" placeholder="Ej. Leche" className="w-full p-4 bg-slate-50 rounded-2xl mb-4 outline-none focus:ring-2 ring-emerald-400" />
+                             <button onClick={() => {
+                                 const name = document.getElementById('pName').value;
+                                 if(name) addProduct(name);
+                             }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200">Guardar en Alacena</button>
+                        </div>
+                    )}
+
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[85%] glass border border-white rounded-[2.5rem] p-2 flex justify-around shadow-2xl">
+                        <button onClick={() => setActiveTab('pantry')} className={`px-6 py-3 rounded-full transition-all ${activeTab === 'pantry' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400'}`}>Alacena</button>
+                        <button onClick={() => setActiveTab('add')} className={`px-6 py-3 rounded-full transition-all ${activeTab === 'add' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400'}`}>+ Añadir</button>
+                    </nav>
                 </div>
             );
 
-            if (!isFirebaseReady) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-400 animate-pulse">Cargando MiAlacena...</div>; 
- 
-            return ( 
-                <div className="min-h-screen max-w-md mx-auto bg-slate-50 flex flex-col relative overflow-hidden shadow-2xl"> 
-                    <header className="glass p-6 pt-10 sticky top-0 z-40 border-b flex justify-between items-center"> 
-                        <div className="flex items-center gap-3"> 
-                            <div className="bg-emerald-600 p-2 rounded-xl text-white"> 
-                                <CustomIcon name="ShoppingBasket" size={24} /> 
-                            </div> 
-                            <h1 className="text-xl font-black text-slate-800 tracking-tight">{t.title}</h1> 
-                        </div> 
-                        <button onClick={() => setShowSettings(true)} className="p-3 bg-white rounded-2xl border shadow-sm text-slate-400"> 
-                            <CustomIcon name="Settings" size={20} /> 
-                        </button> 
-                    </header> 
- 
-                    <main className="flex-1 p-5 pb-32 overflow-y-auto no-scrollbar"> 
-                        {showSettings ? ( 
-                            <div className="space-y-6 animate-pop"> 
-                                <button onClick={() => setShowSettings(false)} className="flex items-center gap-2 text-emerald-600 font-bold mb-4"> 
-                                    <CustomIcon name="ArrowLeft" size={18} /> Volver 
-                                </button> 
-                                <div className="bg-white p-6 rounded-3xl border space-y-4"> 
-                                    <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">{t.language}</h3> 
-                                    <div className="grid grid-cols-2 gap-2"> 
-                                        {Object.keys(TRANSLATIONS).map(l => ( 
-                                            <button key={l} onClick={() => setLang(l)} className={`py-3 rounded-xl font-bold uppercase text-[10px] ${lang === l ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}> 
-                                                {l === 'es' ? 'Español' : l === 'en' ? 'English' : l === 'pt' ? 'Português' : l === 'it' ? 'Italiano' : l === 'fr' ? 'Français' : l === 'de' ? 'Deutsch' : l === 'zh' ? '中文' : '日本語'} 
-                                            </button> 
-                                        ))} 
-                                    </div> 
-                                </div> 
-                                <div className="bg-white p-6 rounded-3xl border space-y-3"> 
-                                    <button onClick={exportData} className="w-full flex items-center gap-3 p-4 bg-slate-50 rounded-2xl font-bold text-slate-700"> 
-                                        <CustomIcon name="Download" size={18} /> {t.export} 
-                                    </button> 
-                                    <button onClick={shareList} className="w-full flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl font-bold text-emerald-700"> 
-                                        <CustomIcon name="Share2" size={18} /> {t.share} 
-                                    </button> 
-                                </div> 
-                            </div> 
-                        ) : showCameraMock ? (
-                            <div className="bg-white p-8 rounded-[3rem] shadow-sm border space-y-6 animate-pop text-center">
-                                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CustomIcon name="Camera" size={40} />
-                                </div>
-                                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">IA Vision</h2>
-                                <p className="text-slate-500 text-sm">Escanea tus tickets o productos para actualizar el inventario automáticamente.</p>
-                                <div className="bg-slate-50 p-6 rounded-2xl border-2 border-dashed border-slate-200">
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Próximamente</p>
-                                </div>
-                                <button onClick={() => setShowCameraMock(false)} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                                    Cerrar
-                                </button>
-                            </div>
-                        ) : activeTab === 'pantry' ? ( 
-                            <div className="space-y-6 animate-pop"> 
-                                <div className="grid grid-cols-2 gap-4"> 
-                                    <div className="bg-white p-5 rounded-[2rem] border shadow-sm text-center"> 
-                                        <p className="text-3xl font-black text-slate-800">{products.length}</p> 
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{t.totalItems}</p> 
-                                    </div> 
-                                    <div className="bg-white p-5 rounded-[2rem] border shadow-sm text-center"> 
-                                        <p className="text-3xl font-black text-rose-500">{products.filter(p => p.currentStock <= p.minStock).length}</p> 
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{t.critical}</p> 
-                                    </div> 
-                                </div> 
-                                <input  
-                                    className="w-full p-5 bg-white rounded-3xl outline-none border font-bold text-slate-600 shadow-sm"  
-                                    placeholder={t.searchPlaceholder} 
-                                    value={searchTerm} 
-                                    onChange={e => setSearchTerm(e.target.value)} 
-                                /> 
-                                <div className="space-y-3"> 
-                                    {products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(product => ( 
-                                        <div key={product.id} className="bg-white p-4 rounded-3xl border flex items-center gap-4 shadow-sm"> 
-                                            <IconRenderer name={product.name} category={product.category} /> 
-                                            <div className="flex-1 truncate"> 
-                                                <h3 className="font-extrabold text-slate-800 text-[11px] uppercase truncate">{product.name}</h3> 
-                                            </div> 
-                                            <div className="flex items-center bg-slate-50 rounded-2xl p-1 gap-2 border"> 
-                                                <button onClick={() => updateStock(product.id, Math.max(0, (product.currentStock || 0) - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-slate-400"> 
-                                                    <CustomIcon name="Minus" size={14}/> 
-                                                </button> 
-                                                <span className="w-6 text-center font-black text-sm">{product.currentStock}</span> 
-                                                <button onClick={() => updateStock(product.id, (product.currentStock || 0) + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-emerald-600"> 
-                                                    <CustomIcon name="Plus" size={14}/> 
-                                                </button> 
-                                            </div> 
-                                        </div> 
-                                    ))} 
-                                </div> 
-                            </div> 
-                        ) : activeTab === 'add' ? ( 
-                            <div className="bg-white p-8 rounded-[3rem] shadow-sm border space-y-6 animate-pop"> 
-                                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{t.newProduct}</h2> 
-                                <input  
-                                    className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none"  
-                                    placeholder="Nombre del producto..." 
-                                    value={newProduct.name} 
-                                    onChange={e => setNewProduct({...newProduct, name: e.target.value})} 
-                                /> 
-                                <button onClick={saveItem} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest"> 
-                                    {t.save} 
-                                </button> 
-                            </div> 
-                        ) : activeTab === 'shopping' ? (
-                            <div className="space-y-6 animate-pop">
-                                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{t.list}</h2>
-                                <div className="space-y-3">
-                                    {products.filter(p => p.currentStock <= p.minStock).map(product => (
-                                        <div key={product.id} className="bg-white p-4 rounded-3xl border flex items-center gap-4 shadow-sm">
-                                            <IconRenderer name={product.name} category={product.category} />
-                                            <div className="flex-1 truncate">
-                                                <h3 className="font-extrabold text-slate-800 text-[11px] uppercase truncate">{product.name}</h3>
-                                                <p className="text-[9px] text-rose-500 font-bold uppercase">{t.critical}</p>
-                                            </div>
-                                            <div className="flex items-center bg-slate-50 rounded-2xl p-1 gap-2 border"> 
-                                                <button onClick={() => updateStock(product.id, Math.max(0, (product.currentStock || 0) - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-slate-400"> 
-                                                    <CustomIcon name="Minus" size={14}/> 
-                                                </button> 
-                                                <span className="w-6 text-center font-black text-sm">{product.currentStock}</span> 
-                                                <button onClick={() => updateStock(product.id, (product.currentStock || 0) + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-xl text-emerald-600"> 
-                                                    <CustomIcon name="Plus" size={14}/> 
-                                                </button> 
-                                            </div> 
-                                        </div>
-                                    ))}
-                                    {products.filter(p => p.currentStock <= p.minStock).length === 0 && (
-                                        <div className="text-center py-20 bg-white rounded-3xl border">
-                                            <p className="text-slate-400 font-bold">¡Todo en orden!</p>
-                                        </div>
-                                    )}
-                                </div>
-                                <button onClick={shareList} className="w-full flex items-center justify-center gap-3 p-5 bg-emerald-600 rounded-[2rem] font-black text-white shadow-lg">
-                                    <CustomIcon name="Share2" size={20} /> {t.share}
-                                </button>
-                            </div>
-                        ) : ( 
-                            <div className="bg-emerald-600 p-8 rounded-[3rem] text-white shadow-xl animate-pop"> 
-                                <h2 className="text-2xl font-black mb-2">{t.chef}</h2> 
-                                <p className="text-emerald-50 text-xs mb-6 opacity-80">{t.chefSub}</p> 
-                                <button className="bg-white text-emerald-700 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-2"> 
-                                    <CustomIcon name="Flame" size={16} /> {t.recipeBtn} 
-                                </button> 
-                            </div> 
-                        )} 
-                    </main> 
- 
-                    <nav className="glass border-t fixed bottom-0 left-0 right-0 max-w-md mx-auto h-24 flex justify-around items-center px-4 pb-4"> 
-                        <NavBtn 
-                            active={activeTab === 'pantry'} 
-                            onClick={() => changeTab('pantry')} 
-                            icon="LayoutGrid" 
-                            label={t.stock} 
-                        /> 
-                        <NavBtn 
-                            active={activeTab === 'chef'} 
-                            onClick={() => changeTab('chef')} 
-                            icon="ChefHat" 
-                            label={t.chef} 
-                        /> 
-                        <div className="w-16 h-16" />  
-                        <NavBtn 
-                            active={activeTab === 'add'} 
-                            onClick={() => changeTab('add')} 
-                            icon="Plus" 
-                            label={t.add} 
-                        /> 
-                        <NavBtn 
-                            active={activeTab === 'shopping'} 
-                            onClick={() => changeTab('shopping')} 
-                            icon="ShoppingCart" 
-                            label={t.list} 
-                        /> 
-                        <button 
-                            onClick={() => setShowCameraMock(true)} 
-                            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-emerald-600 text-white rounded-[1.8rem] flex items-center justify-center shadow-2xl border-4 border-white active:scale-90 transition-all"
-                        > 
-                            <CustomIcon name="Camera" size={26} /> 
-                        </button> 
-                    </nav> 
-                </div> 
-            ); 
-        } 
- 
-        function NavBtn({ active, onClick, icon, label }) { 
-            return ( 
-                <button onClick={onClick} className={`flex flex-col items-center gap-1 w-full ${active ? 'text-emerald-600' : 'text-slate-300'}`}> 
-                    <CustomIcon name={icon} size={22} /> 
-                    <span className="text-[7px] font-black uppercase">{label}</span> 
-                </button> 
-            ); 
-        } 
- 
+            async function updateQty(id, newVal) {
+                if (newVal < 0) return;
+                const { db, doc, updateDoc } = window.FirebaseSDK;
+                await updateDoc(doc(db, 'pantry', id), { stock: newVal });
+            }
+
+            async function addProduct(name) {
+                const { db, collection, addDoc } = window.FirebaseSDK;
+                await addDoc(collection(db, 'pantry'), { name, stock: 1, min: 1, category: 'General' });
+                setActiveTab('pantry');
+            }
+        }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />); 
-    </script> 
+        root.render(<App />);
+    </script>
 </body> 
-</html> 
+</html>
