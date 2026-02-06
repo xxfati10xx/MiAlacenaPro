@@ -1,8 +1,0 @@
-{
-  "name": "MiAlacena Pro",
-  "short_name": "MiAlacena",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#F8FAFC",
-  "theme_color": "#059669"
-}
