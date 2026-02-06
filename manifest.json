@@ -1,1 +1,26 @@
-{"theme_color":"#00994a","background_color":"#000000","icons":[{"purpose":"maskable","sizes":"512x512","src":"icon512_maskable.png","type":"image/png"},{"purpose":"any","sizes":"512x512","src":"icon512_rounded.png","type":"image/png"}],"orientation":"any","display":"fullscreen","dir":"auto","lang":"es-ES","name":"MiAlacena Pro","short_name":"MiAlacena","start_url":"https://mialacenapro.netlify.app/"}
+{
+  "name": "MiAlacena Pro - Inventario Inteligente",
+  "short_name": "MiAlacena",
+  "description": "Tu inventario inteligente en la palma de tu mano.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "dir": "auto",
+  "lang": "es-ES",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon512_maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon512_rounded.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
