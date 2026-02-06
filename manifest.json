@@ -1,26 +1,15 @@
 {
-  "name": "MiAlacena Pro - Inventario Inteligente",
+  "name": "MiAlacena Pro",
   "short_name": "MiAlacena",
-  "description": "Tu inventario inteligente en la palma de tu mano.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#059669",
-  "dir": "auto",
-  "lang": "es-ES",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon512_maskable.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3082/3082031.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icon512_rounded.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
