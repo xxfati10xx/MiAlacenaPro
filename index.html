@@ -29,9 +29,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, updateDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         try {
+            /* global __firebase_config */
             if (typeof __firebase_config !== 'undefined' && __firebase_config) {
                 const firebaseConfig = JSON.parse(__firebase_config);
                 const app = initializeApp(firebaseConfig);
@@ -55,89 +56,83 @@
     </script>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        /* global React, ReactDOM, __app_id, __initial_auth_token */
+        const { useState, useEffect } = React;
 
-        // Componente de Iconos SVG Propios para evitar dependencias de Lucide inestables
         const CustomIcon = ({ name, size = 20, className = "" }) => {
             const icons = {
                 ShoppingBasket: (
-                    <>
-                        <path d="m5 11 4-7m10 7-4-7M2 11h20m-2 0-1.6 8.1c-.2 1-.9 1.9-2 1.9H7.6c-1.1 0-1.8-.9-2-1.9L4 11m4 4v2m4-2v2m4-2v2" />
-                    </>
+                    <path d="m5 11 4-7m10 7-4-7M2 11h20m-2 0-1.6 8.1c-.2 1-.9 1.9-2 1.9H7.6c-1.1 0-1.8-.9-2-1.9L4 11m4 4v2m4-2v2m4-2v2" />
                 ),
                 Settings: (
-                    <>
-                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 0-2-2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z" />
-                    </>
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 0-2-2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z" />
                 ),
                 LayoutGrid: (
-                    <>
+                    <React.Fragment>
                         <rect width="7" height="7" x="3" y="3" rx="1" />
                         <rect width="7" height="7" x="14" y="3" rx="1" />
                         <rect width="7" height="7" x="14" y="14" rx="1" />
                         <rect width="7" height="7" x="3" y="14" rx="1" />
-                    </>
+                    </React.Fragment>
                 ),
                 ChefHat: (
-                    <>
+                    <React.Fragment>
                         <path d="M6 18h12a2 2 0 0 1 2 2v1H4v-1a2 2 0 0 1 2-2Z" />
                         <path d="M9 18V5a4 4 0 1 1 6 0v13" />
                         <path d="M17 10a4 4 0 1 1-1.5 7.5" />
                         <path d="M8.5 17.5a4 4 0 1 1-1.5-7.5" />
-                    </>
+                    </React.Fragment>
                 ),
                 Plus: <path d="M5 12h14m-7-7v14" />,
                 Minus: <path d="M5 12h14" />,
                 ShoppingCart: (
-                    <>
+                    <React.Fragment>
                         <circle cx="8" cy="21" r="1" />
                         <circle cx="19" cy="21" r="1" />
                         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-                    </>
+                    </React.Fragment>
                 ),
                 Camera: (
-                    <>
+                    <React.Fragment>
                         <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
                         <circle cx="12" cy="13" r="3" />
-                    </>
+                    </React.Fragment>
                 ),
                 ArrowLeft: <path d="m12 19-7-7 7-7m5 7H5" />,
                 Download: (
-                    <>
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3" />
-                    </>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3" />
                 ),
                 Share2: (
-                    <>
+                    <React.Fragment>
                         <circle cx="18" cy="5" r="3" />
                         <circle cx="6" cy="12" r="3" />
                         <circle cx="18" cy="19" r="3" />
                         <path d="m8.59 13.51 6.83 3.98m-.01-10.98-6.82 3.98" />
-                    </>
+                    </React.Fragment>
                 ),
                 Flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
                 Box: (
-                    <>
+                    <React.Fragment>
                         <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
                         <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
-                    </>
+                    </React.Fragment>
                 ),
                 Beer: (
-                    <>
+                    <React.Fragment>
                         <path d="M17 11h1a3 3 0 0 1 0 6h-1" />
                         <path d="M9 12v6" />
                         <path d="M13 12v6" />
                         <path d="M14 7.5c-1 0-1.44.5-3 .5s-2-.5-3-.5-1.72.5-2.5.5a2.5 2.5 0 0 1 0-5c.78 0 1.57.5 2.5.5S9.44 3 11 3s2 .5 3 .5 1.72-.5 2.5-.5a2.5 2.5 0 0 1 0 5c-.78 0-1.5-.5-2.5-.5Z" />
                         <path d="M5 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8" />
-                    </>
+                    </React.Fragment>
                 ),
                 Beef: (
-                    <>
+                    <React.Fragment>
                         <circle cx="12.5" cy="8.5" r="2.5" />
                         <path d="M15 2H9a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Z" />
                         <path d="M7 14h10" />
                         <path d="M7 18h10" />
-                    </>
+                    </React.Fragment>
                 )
             };
 
@@ -161,7 +156,7 @@
         const TRANSLATIONS = {
             es: { title: 'MiAlacena', stock: 'Stock', chef: 'Chef IA', add: 'Añadir', list: 'Lista', totalItems: 'Productos', critical: 'Crítico', searchPlaceholder: 'Buscar...', newProduct: 'Nuevo Producto', save: 'GUARDAR', online: 'Nube Activa', recipeBtn: 'RECETA IA', chefSub: 'Cocinando con lo que tienes.', settings: 'Ajustes', language: 'Idioma', export: 'Exportar Datos', share: 'Compartir Lista' },
             en: { title: 'MyPantry', stock: 'Stock', chef: 'AI Chef', add: 'Add', list: 'List', totalItems: 'Items', critical: 'Critical', searchPlaceholder: 'Search...', newProduct: 'New Item', save: 'SAVE', online: 'Cloud Active', recipeBtn: 'AI RECIPE', chefSub: 'Cooking with what you have.', settings: 'Settings', language: 'Language', export: 'Export Data', share: 'Share List' },
-            pt: { title: 'MinhaDespensa', stock: 'Estoque', chef: 'Chef IA', add: 'Adicionar', list: 'Lista', totalItems: 'Itens', critical: 'Crítico', searchPlaceholder: 'Buscar...', newProduct: 'Novo Item', save: 'SALVAR', online: 'Nuvem Ativa', recipeBtn: 'RECEITA IA', chefSub: 'Cozinhando com o que tem.', settings: 'Configurações', language: 'Idioma', export: 'Exportar Datos', share: 'Compartilhar' },
+            pt: { title: 'MinhaDespensa', stock: 'Estoque', chef: 'Chef IA', add: 'Adicionar', list: 'Lista', totalItems: 'Itens', critical: 'Crítico', searchPlaceholder: 'Buscar...', newProduct: 'Novo Item', save: 'SALVAR', online: 'Nuvem Ativa', recipeBtn: 'RECEITA IA', chefSub: 'Cozinhando con o que tem.', settings: 'Configurações', language: 'Idioma', export: 'Exportar Datos', share: 'Compartilhar' },
             it: { title: 'MiaDispensa', stock: 'Scorta', chef: 'Chef IA', add: 'Aggiungi', list: 'Lista', totalItems: 'Articoli', critical: 'Critico', searchPlaceholder: 'Cerca...', newProduct: 'Nuovo Articolo', save: 'SALVA', online: 'Cloud Attivo', recipeBtn: 'RICETTA IA', chefSub: 'Cucinare con quello que hai.', settings: 'Impostazioni', language: 'Lingua', export: 'Esporta Dati', share: 'Condividi' },
             fr: { title: 'MonGardeManger', stock: 'Stock', chef: 'Chef IA', add: 'Ajouter', list: 'Liste', totalItems: 'Articles', critical: 'Critique', searchPlaceholder: 'Chercher...', newProduct: 'Nouvel Article', save: 'ENREGISTRER', online: 'Cloud Actif', recipeBtn: 'RECETTE IA', chefSub: 'Cuisiner avec ce que vous avez.', settings: 'Paramètres', language: 'Langue', export: 'Exporter', share: 'Partager' },
             de: { title: 'MeineVorratskammer', stock: 'Vorrat', chef: 'KI Chef', add: 'Hinzufügen', list: 'Liste', totalItems: 'Artikel', critical: 'Kritisch', searchPlaceholder: 'Suche...', newProduct: 'Neuer Artikel', save: 'SPEICHERN', online: 'Cloud Aktiv', recipeBtn: 'KI REZEPT', chefSub: 'Kochen mit dem, was da ist.', settings: 'Einstellungen', language: 'Sprache', export: 'Exportieren', share: 'Teilen' },
@@ -206,7 +201,7 @@
                 return () => {
                     window.removeEventListener('firebase-ready', handleReady);
                     window.removeEventListener('firebase-error', handleError);
-                }
+                };
             }, []);
 
             useEffect(() => {
@@ -265,8 +260,14 @@
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pantry', id), { currentStock: val, updatedAt: Date.now() });
             };
 
-            const openCamera = () => {
-                setShowCameraMock(true);
+            const resetViews = () => {
+                setShowSettings(false);
+                setShowCameraMock(false);
+            };
+
+            const changeTab = (tab) => {
+                setActiveTab(tab);
+                resetViews();
             };
 
             if (firebaseError) return (
@@ -429,12 +430,35 @@
                     </main>
 
                     <nav className="glass border-t fixed bottom-0 left-0 right-0 max-w-md mx-auto h-24 flex justify-around items-center px-4 pb-4">
-                        <NavBtn active={activeTab === 'pantry'} onClick={() => {setActiveTab('pantry'); setShowSettings(false); setShowCameraMock(false)}} icon="LayoutGrid" label={t.stock} />
-                        <NavBtn active={activeTab === 'chef'} onClick={() => {setActiveTab('chef'); setShowSettings(false); setShowCameraMock(false)}} icon="ChefHat" label={t.chef} />
+                        <NavBtn
+                            active={activeTab === 'pantry'}
+                            onClick={() => changeTab('pantry')}
+                            icon="LayoutGrid"
+                            label={t.stock}
+                        />
+                        <NavBtn
+                            active={activeTab === 'chef'}
+                            onClick={() => changeTab('chef')}
+                            icon="ChefHat"
+                            label={t.chef}
+                        />
                         <div className="w-16 h-16" />
-                        <NavBtn active={activeTab === 'add'} onClick={() => {setActiveTab('add'); setShowSettings(false); setShowCameraMock(false)}} icon="Plus" label={t.add} />
-                        <NavBtn active={activeTab === 'shopping'} onClick={() => {setActiveTab('shopping'); setShowSettings(false); setShowCameraMock(false)}} icon="ShoppingCart" label={t.list} />
-                        <button onClick={openCamera} className="absolute bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-emerald-600 text-white rounded-[1.8rem] flex items-center justify-center shadow-2xl border-4 border-white active:scale-90 transition-all">
+                        <NavBtn
+                            active={activeTab === 'add'}
+                            onClick={() => changeTab('add')}
+                            icon="Plus"
+                            label={t.add}
+                        />
+                        <NavBtn
+                            active={activeTab === 'shopping'}
+                            onClick={() => changeTab('shopping')}
+                            icon="ShoppingCart"
+                            label={t.list}
+                        />
+                        <button
+                            onClick={() => setShowCameraMock(true)}
+                            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-emerald-600 text-white rounded-[1.8rem] flex items-center justify-center shadow-2xl border-4 border-white active:scale-90 transition-all"
+                        >
                             <CustomIcon name="Camera" size={26} />
                         </button>
                     </nav>
@@ -451,7 +475,8 @@
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
