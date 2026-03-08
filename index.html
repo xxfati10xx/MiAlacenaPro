@@ -1124,7 +1124,7 @@
                     }
 
                     if (pName) {
-                        addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry');
+                        addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry', 'unid');
                         speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${pName}`);
                         return;
                     }
@@ -1195,24 +1195,36 @@
                     const file = e.target.files[0];
                     if (!file) { setIsTicketScanning(false); return; }
                     try {
-                        const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', { logger: m => console.log(m) });
-                        // Simple parser: lines that look like "Item Price"
+                        const { data: { text } } = await Tesseract.recognize(file, 'spa+eng');
                         const lines = text.split('\n');
-                        const added = [];
+                        const detected = [];
+                        const blacklist = ['total', 'iva', 'subtotal', 'cambio', 'efectivo', 'tarjeta', 'visa', 'mastercard', 'gracias', 'tienda', 'market', 'super', 'pago', 'cajero', 'fecha', 'hora'];
+
                         lines.forEach(line => {
-                            const match = line.match(/([a-zA-Z\s]+)\s+(\d+[\.,]\d+)/);
+                            // Match: [Name] [Price]
+                            const match = line.match(/([a-zA-Z\s]{3,})\s+(\d+[\.,]\d+)/);
                             if (match) {
                                 const name = match[1].trim();
                                 const price = parseFloat(match[2].replace(',', '.'));
-                                if (name.length > 2) {
-                                    addProduct(name, 1, 1, 'General', '', '', price, 'Pantry', 'unid');
-                                    added.push(name);
+                                const isBlacklisted = blacklist.some(word => name.toLowerCase().includes(word));
+                                if (name.length > 3 && !isBlacklisted && price > 0) {
+                                    detected.push({ name, price });
                                 }
                             }
                         });
-                        alert(lang === 'es' ? `Ticket procesado. Añadidos: ${added.length} productos.` : `Ticket processed. Added: ${added.length} items.`);
+
+                        if (detected.length > 0) {
+                            const confirmList = detected.map(d => `${d.name}: $${d.price}`).join('\n');
+                            if (confirm((lang === 'es' ? '¿Añadir estos productos?\n\n' : 'Add these items?\n\n') + confirmList)) {
+                                detected.forEach(d => addProduct(d.name, 1, 1, 'General', '', '', d.price, 'Pantry', 'unid'));
+                                speak(lang === 'es' ? `Añadidos ${detected.length} productos` : `Added ${detected.length} items`);
+                            }
+                        } else {
+                            alert(lang === 'es' ? "No se detectaron productos claros en el ticket." : "No clear products detected in the ticket.");
+                        }
                     } catch (err) {
                         console.error(err);
+                        alert("Error OCR: " + err.message);
                     } finally {
                         setIsTicketScanning(false);
                     }
