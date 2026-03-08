@@ -21,12 +21,12 @@
 <body class="bg-slate-50"> 
     <div id="root"></div> 
 
-    <script type="module">
-        /* global React, ReactDOM */
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
 
+    <script>
         const firebaseConfig = window.__firebase_config || {
             apiKey: "TU_API_KEY",
             authDomain: "TU_PROYECTO.firebaseapp.com",
@@ -36,17 +36,20 @@
             appId: window.__app_id || "ID_APP"
         };
 
-        try {
-            const app = initializeApp(firebaseConfig);
-            window.FirebaseSDK = {
-                db: getFirestore(app), auth: getAuth(app),
-                collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy,
-                signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
-            };
-            window.dispatchEvent(new Event('firebase-ready'));
-        } catch (e) {
-            console.error("Firebase load error", e);
-            window.dispatchEvent(new Event('firebase-error'));
+        const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
+
+        if (isConfigValid) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                window.dispatchEvent(new Event('firebase-ready'));
+            } catch (e) {
+                console.error("Firebase init error", e);
+                window.dispatchEvent(new Event('firebase-error'));
+            }
+        } else {
+            console.warn("Firebase config is missing or invalid.");
+            // Delay a bit to ensure React is listening
+            setTimeout(() => window.dispatchEvent(new Event('firebase-error')), 100);
         }
     </script>
 
@@ -85,40 +88,87 @@
             const [lang, setLang] = useState('es');
             const [darkMode, setDarkMode] = useState(false);
 
+            const [configError, setConfigError] = useState(false);
+
             useEffect(() => {
+                let unsubscribe = null;
+
                 const init = () => {
-                    const { auth, onAuthStateChanged, db, collection, onSnapshot, query, where } = window.FirebaseSDK;
+                    if (typeof firebase === 'undefined') return;
                     
-                    onAuthStateChanged(auth, (u) => {
+                    firebase.auth().onAuthStateChanged((u) => {
                         setUser(u);
                         if (u) {
-                            const q = query(collection(db, 'pantry'), where("userId", "==", u.uid));
-                            onSnapshot(q, (snapshot) => {
-                                setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                                setLoading(false);
-                            });
+                            unsubscribe = firebase.firestore().collection('pantry')
+                                .where("userId", "==", u.uid)
+                                .onSnapshot((snapshot) => {
+                                    setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                                    setLoading(false);
+                                }, (err) => {
+                                    console.error("Firestore error:", err);
+                                    setLoading(false);
+                                });
                         } else {
                             setProducts([]);
                             setLoading(false);
                         }
                     });
                 };
-                window.addEventListener('firebase-ready', init);
-                window.addEventListener('firebase-error', () => setLoading(false));
+
+                if (window.firebase && firebase.apps.length > 0) {
+                    init();
+                } else {
+                    window.addEventListener('firebase-ready', init);
+                }
+
+                window.addEventListener('firebase-error', () => {
+                    setLoading(false);
+                    setConfigError(true);
+                });
+
+                const timeout = setTimeout(() => {
+                    setLoading(currentLoading => {
+                        if (currentLoading) setConfigError(true);
+                        return currentLoading;
+                    });
+                }, 5000);
+
+                return () => {
+                    if (unsubscribe) unsubscribe();
+                    window.removeEventListener('firebase-ready', init);
+                    clearTimeout(timeout);
+                };
             }, []);
 
             const handleLogin = async () => {
-                const { auth, GoogleAuthProvider, signInWithPopup } = window.FirebaseSDK;
-                const provider = new GoogleAuthProvider();
-                try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try { await firebase.auth().signInWithPopup(provider); } catch (e) { console.error(e); alert("Error login: " + e.message); }
             };
 
             const handleLogout = async () => {
-                const { auth, signOut } = window.FirebaseSDK;
-                try { await signOut(auth); } catch (e) { console.error(e); }
+                try { await firebase.auth().signOut(); } catch (e) { console.error(e); }
             };
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
+            if (configError) return (
+                <div className="max-w-md mx-auto min-h-screen flex flex-col items-center justify-center p-8 bg-slate-50">
+                    <div className="glass p-10 rounded-[3rem] shadow-2xl text-center animate-pop border border-white">
+                        <div className="text-6xl mb-6">⚠️</div>
+                        <h1 className="text-2xl font-extrabold text-slate-800 mb-4">Configuración Requerida</h1>
+                        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
+                            Para usar esta app sin costos de créditos, debes vincular tu propio Firebase.<br/><br/>
+                            Edita el archivo HTML y busca <b>firebaseConfig</b> para añadir tus credenciales.
+                        </p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="w-full bg-emerald-500 text-white p-4 rounded-2xl shadow-lg font-bold"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                </div>
+            );
 
             if (loading) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -350,23 +400,25 @@
 
             async function updateQty(id, newVal) {
                 if (newVal < 0) return;
-                const { db, doc, updateDoc } = window.FirebaseSDK;
-                await updateDoc(doc(db, 'pantry', id), { stock: newVal });
+                try {
+                    await firebase.firestore().collection('pantry').doc(id).update({ stock: newVal });
+                } catch (e) { console.error(e); }
             }
 
             async function addProduct(name, stock, min, category, expiry, photo) {
-                const { db, collection, addDoc } = window.FirebaseSDK;
-                await addDoc(collection(db, 'pantry'), {
-                    name,
-                    stock: parseInt(stock) || 1,
-                    min: parseInt(min) || 1,
-                    category: category || 'General',
-                    expiry: expiry || '',
-                    photo: photo || '',
-                    userId: user.uid,
-                    createdAt: new Date().toISOString()
-                });
-                setActiveTab('pantry');
+                try {
+                    await firebase.firestore().collection('pantry').add({
+                        name,
+                        stock: parseInt(stock) || 1,
+                        min: parseInt(min) || 1,
+                        category: category || 'General',
+                        expiry: expiry || '',
+                        photo: photo || '',
+                        userId: user.uid,
+                        createdAt: new Date().toISOString()
+                    });
+                    setActiveTab('pantry');
+                } catch (e) { console.error(e); alert("Error guardando: " + e.message); }
             }
         }
 
