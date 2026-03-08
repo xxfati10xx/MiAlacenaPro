@@ -15,12 +15,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style> 
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'); 
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; } 
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        :root { --primary: #19e66f; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; color: #1e293b; }
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); } 
         .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2); } 
         @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 24px; }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary { color: var(--primary); }
+        .border-primary { border-color: var(--primary); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        input::placeholder { color: #94a3b8; font-weight: 500; }
     </style> 
 </head> 
 <body class="bg-slate-50"> 
@@ -32,8 +41,8 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos', editTitle: 'Actualizar Compra', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo Mínimo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...' },
-            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products', editTitle: 'Update Purchase', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total Value', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Under Minimum', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...' },
+            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Vence', category: 'Categoría', search: 'Buscar en mi alacena...', empty: 'No hay productos', editTitle: 'Detalle de Producto', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...', seeAll: 'Ver Todo', greeting: '¡Buenos días!', hello: 'Hola', soon: 'pronto', alert: 'alerta' },
+            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Settings', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Exp.', category: 'Category', search: 'Search in my pantry...', empty: 'No products', editTitle: 'Product Detail', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Low', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...', seeAll: 'See All', greeting: 'Good morning!', hello: 'Hello', soon: 'soon', alert: 'alert' },
             pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Estoque', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Estoque Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir producto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Preço', location: 'Localização', locFridge: 'Frigorífico', locFreezer: 'Congelador', locPantry: 'Despensa Principal', locOther: 'Outro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdício', consumptionFreq: 'Frequência de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Mais Usados', outOfStock: 'Esgotados', avgLife: 'Vida Útil Média', statStock: 'Gestão de Estoque', statWaste: 'Controle de Desperdício', statFinance: 'Finanças e Gastos', statHabits: 'Uso e Hábitos', days: 'dias', recipes: 'Receitas', recipeCoverage: 'Cobertura de Receitas', underMin: 'Abaixo do Mínimo', priceHistory: 'Histórico de Preços', wasteBtn: 'Marcar como Desperdício', suggestions: 'Sugestões', noData: 'Sem dados' },
             it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario inteligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene', price: 'Prezzo', location: 'Posizione', locFridge: 'Frigorifero', locFreezer: 'Congelatore', locPantry: 'Dispensa Principale', locOther: 'Altro', totalValue: 'Valore Totale', wasteIndex: 'Indice di Spreco', consumptionFreq: 'Frequenza di Consumo', nextPurchase: 'Prossimo Acquisto', topUsed: 'Più Usati', outOfStock: 'Esauriti', avgLife: 'Vita Media', statStock: 'Gestione Scorte', statWaste: 'Controllo Sprechi', statFinance: 'Finanza e Spese', statHabits: 'Uso e Abitudini', days: 'giorni', recipes: 'Ricette', recipeCoverage: 'Copertura Ricette', underMin: 'Sotto Minimo', priceHistory: 'Cronologia Prezzi', wasteBtn: 'Segna come Spreco', suggestions: 'Suggerimenti', noData: 'Nessun dato' },
             fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène', price: 'Prix', location: 'Emplacement', locFridge: 'Réfrigérateur', locFreezer: 'Congélateur', locPantry: 'Garde-manger Principal', locOther: 'Autre', totalValue: 'Valeur Totale', wasteIndex: 'Indice de Gaspillage', consumptionFreq: 'Fréquence de Consommation', nextPurchase: 'Prochain Achat', topUsed: 'Plus Utilisés', outOfStock: 'Épuisés', avgLife: 'Durée de Vie Moyenne', statStock: 'Gestion des Stocks', statWaste: 'Contrôle du Gaspillage', statFinance: 'Finances et Dépenses', statHabits: 'Usage et Habitudes', days: 'jours', recipes: 'Recettes', recipeCoverage: 'Couverture des Recettes', underMin: 'Sous le Minimum', priceHistory: 'Historique des Prix', wasteBtn: 'Marquer comme Gaspillage', suggestions: 'Suggestions', noData: 'Pas de données' },
@@ -92,6 +101,7 @@
             const [isTicketScanning, setIsTicketScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
             const [lastCommand, setLastCommand] = useState('');
+            const [searchQuery, setSearchQuery] = useState('');
 
             useEffect(() => {
                 localStorage.setItem('pantry_products', JSON.stringify(products));
@@ -267,98 +277,141 @@
 
             return (
                 <div className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`}>
-                <div className="max-w-5xl mx-auto min-h-screen pb-24 px-4">
-                    <header className="py-8 flex justify-between items-center">
-                        <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>{t.title}<span className="text-emerald-500">.</span></h1>
+                <div className="max-w-5xl mx-auto min-h-screen pb-32 px-4">
+                    <header className="pt-8 pb-6 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-[#fce0d3] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Avatar" className="w-10 h-10 mt-2" />
+                            </div>
+                            <div>
+                                <p className="text-[#94a3b8] text-xs font-medium">{t.greeting}</p>
+                                <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{t.hello}, Carlos</h1>
+                            </div>
+                        </div>
                         <div className="flex gap-2 items-center">
                              <button
                                 onClick={() => startVoiceAssistant()}
-                                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-sm ${isListening ? 'bg-red-500 border-red-400 text-white animate-pulse' : (darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white')}`}
+                                title={t.voiceAssistant}
+                                className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm border border-slate-100 ${isListening ? 'bg-red-500 text-white animate-pulse' : (darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f8fafc]')}`}
                              >
-                                🎤
+                                <span className="material-symbols-rounded">mic</span>
                              </button>
-                             <button
-                                onClick={() => setDarkMode(!darkMode)}
-                                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
-                             >
-                                {darkMode ? '🌙' : '☀️'}
+                             <button className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm border border-slate-100 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f8fafc]'}`}>
+                                <span className="material-symbols-rounded text-[#334155]">notifications</span>
                              </button>
-                             <select
-                                value={lang}
-                                onChange={(e) => setLang(e.target.value)}
-                                className={`px-2 py-1 rounded-full shadow-sm text-xs font-bold uppercase border outline-none ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white'}`}
-                             >
-                                {Object.keys(TRANSLATIONS).map(l => (
-                                    <option key={l} value={l}>{l}</option>
-                                ))}
-                             </select>
                         </div>
                     </header>
 
                     {activeTab === 'pantry' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <div className="col-span-full mb-4 flex justify-between items-center px-2">
-                                <h2 className="font-bold flex items-center gap-2">🏠 {t.pantry}</h2>
-                                <button
-                                    onClick={() => setHeatmapMode(!heatmapMode)}
-                                    className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${heatmapMode ? 'bg-orange-500 text-white border-orange-400 shadow-lg' : (darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200')}`}
-                                >
-                                    🔥 {t.heatmap}
-                                </button>
+                        <React.Fragment>
+                            <div className="flex flex-col gap-6">
+                            <div className={`relative flex items-center p-4 rounded-2xl shadow-sm border border-slate-100 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f1f5f9]'}`}>
+                                <span className="material-symbols-rounded text-[#94a3b8] absolute left-4">search</span>
+                                <input
+                                    type="text"
+                                    placeholder={t.search}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="bg-transparent w-full pl-10 outline-none text-sm font-medium placeholder:text-[#94a3b8]"
+                                />
                             </div>
-                            {products.length === 0 ? (
-                                <p className="col-span-full text-center text-slate-400 mt-10 animate-pulse">{t.empty}</p>
-                            ) : products.map(p => {
-                                let heatmapStyle = {};
-                                if (heatmapMode) {
-                                    const ageDays = (new Date() - new Date(p.createdAt || Date.now())) / (1000*60*60*24);
-                                    // Scale: 0 days = blue, 14+ days = red
-                                    const hue = Math.max(0, Math.min(240, 240 - (ageDays * (240/14)))); // 240 (blue) to 0 (red)
-                                    heatmapStyle = { backgroundColor: `hsla(${hue}, 70%, 50%, 0.15)`, borderColor: `hsla(${hue}, 70%, 50%, 0.4)` };
-                                }
-                                return (
-                                <div key={p.id} style={heatmapStyle} className={`${darkMode ? 'bg-slate-800/50 border-slate-700' : 'glass border-white'} p-4 rounded-3xl border shadow-sm flex justify-between items-center animate-pop backdrop-blur-md`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl shadow-inner">
-                                            {p.photo ? <img src={p.photo} className="w-full h-full rounded-2xl object-cover" /> : getIcon(p.name, p.category)}
-                                        </div>
-                                        <div>
-                                            <h3 onClick={() => setEditingProduct(p)} className={`font-bold cursor-pointer hover:text-emerald-500 transition-colors ${darkMode ? 'text-slate-100' : 'text-slate-700'}`}>{p.name}</h3>
-                                            <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>{t.stock}: {p.stock} {p.unit || t.uUnit}</p>
-                                            {p.expiry && (
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <span className="text-[10px] uppercase font-bold text-slate-400">{t.expiry}:</span>
-                                                    <span className={`text-[10px] font-bold ${
-                                                        new Date(p.expiry) < new Date() ? 'text-red-500' :
-                                                        (new Date(p.expiry) - new Date()) / (1000*60*60*24) < 3 ? 'text-orange-500' : 'text-slate-400'
-                                                    }`}>
-                                                        {new Date(p.expiry).toLocaleDateString(lang)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {stats.predictions[p.id] && (
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <span className="text-[10px] uppercase font-bold text-emerald-500">🤖 {t.aiPrediction}:</span>
-                                                    <span className="text-[10px] font-bold text-emerald-600">{stats.predictions[p.id].date}</span>
-                                                </div>
-                                            )}
-                                            {['Frutas/Verduras', 'Produce'].includes(p.category) && (
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <span className="text-[10px] uppercase font-bold text-orange-500">🌡️ Risk:</span>
-                                                    <span className="text-[10px] font-bold text-orange-600">
-                                                        {Math.min(100, ( (new Date() - new Date(p.createdAt)) / (1000*60*60*24) * 20 )).toFixed(0)}%
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => updateQty(p.id, p.stock - 1)} className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg ${darkMode ? 'bg-slate-700 text-white' : 'bg-slate-100'}`}>-</button>
-                                        <button onClick={() => updateQty(p.id, p.stock + 1)} className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-lg">+</button>
+
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                                    <p className="text-[10px] text-[#94a3b8] font-bold uppercase tracking-wider">{t.totalValue}</p>
+                                    <h2 className="text-2xl font-extrabold text-[#0f172a]">{products.length}</h2>
+                                    <div className="flex items-center gap-1 text-[#19e66f] text-[10px] font-bold">
+                                        <span className="material-symbols-rounded !text-[14px]">trending_up</span>
+                                        2%
                                     </div>
                                 </div>
-                            )})}
-                        </div>
+                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#fff7ed]'}`}>
+                                    <p className="text-[10px] text-[#f97316] font-bold uppercase tracking-wider">{t.underMin}</p>
+                                    <h2 className="text-2xl font-extrabold text-[#f97316]">{stats.underMin.length.toString().padStart(2, '0')}</h2>
+                                    <div className="flex items-center gap-1 text-[#f97316] text-[10px] font-bold">
+                                        <span className="material-symbols-rounded !text-[14px]">warning</span>
+                                        {t.alert}
+                                    </div>
+                                </div>
+                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#fff1f2]'}`}>
+                                    <p className="text-[10px] text-[#e11d48] font-bold uppercase tracking-wider">{t.expiry}</p>
+                                    <h2 className="text-2xl font-extrabold text-[#e11d48]">
+                                        {products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) / (1000*60*60*24) < 3).length.toString().padStart(2, '0')}
+                                    </h2>
+                                    <div className="flex items-center gap-1 text-[#e11d48] text-[10px] font-bold">
+                                        <span className="material-symbols-rounded !text-[14px]">event_busy</span>
+                                        {t.soon}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center px-1">
+                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Mi Alacena</h2>
+                                <button className="text-primary text-sm font-bold">{t.seeAll}</button>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 pb-20">
+                                {products.length === 0 ? (
+                                <p className="col-span-full text-center text-slate-400 mt-10 animate-pulse">{t.empty}</p>
+                                ) : products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => {
+                                    let heatmapStyle = {};
+                                    if (heatmapMode) {
+                                        const ageDays = (new Date() - new Date(p.createdAt || Date.now())) / (1000*60*60*24);
+                                        // Scale: 0 days = blue, 14+ days = red
+                                        const hue = Math.max(0, Math.min(240, 240 - (ageDays * (240/14)))); // 240 (blue) to 0 (red)
+                                        heatmapStyle = { backgroundColor: `hsla(${hue}, 70%, 50%, 0.15)`, borderColor: `hsla(${hue}, 70%, 50%, 0.4)` };
+                                    }
+                                    return (
+                                        <div key={p.id} style={heatmapStyle} className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'} p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4 animate-pop`}>
+                                            <div className="w-20 h-20 rounded-2xl bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                                                {p.photo ? (
+                                                    <img src={p.photo} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="text-4xl">{getIcon(p.name, p.category)}</div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 flex flex-col gap-1 min-w-0">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className={`font-bold truncate text-lg ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{p.name}</h3>
+                                                    {p.stock <= p.min && (
+                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold shrink-0 ${p.stock === 0 ? 'bg-[#fff1f2] text-[#e11d48]' : 'bg-[#fff7ed] text-[#f97316]'}`}>
+                                                            {p.stock === 0 ? 'Crítico' : 'Bajo'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[#94a3b8] text-xs font-medium">
+                                                    {p.stock} de {Math.max(p.stock, p.min * 2)} {p.unit || t.uUnit}
+                                                </p>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full transition-all duration-500 ${
+                                                                p.stock === 0 ? 'bg-red-500' :
+                                                                p.stock <= p.min ? 'bg-orange-500' : 'bg-primary'
+                                                            }`}
+                                                            style={{ width: `${Math.min(100, (p.stock / (p.min * 2 || 1)) * 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setEditingProduct(p)}
+                                                className="p-2 text-[#94a3b8] hover:text-slate-600 transition-colors"
+                                            >
+                                                <span className="material-symbols-rounded">more_vert</span>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            </div>
+                            <button
+                                onClick={() => setActiveTab('add')}
+                                className="fixed bottom-28 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-90 transition-transform"
+                            >
+                                <span className="material-symbols-rounded !text-4xl">add</span>
+                            </button>
+                        </React.Fragment>
                     ) : activeTab === 'add' ? (
                         <div className={`animate-pop p-6 rounded-[2.5rem] shadow-xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
                              <h2 className="text-xl font-bold mb-4">{t.addProductTitle}</h2>
@@ -435,65 +488,90 @@
                         </div>
                     ) : activeTab === 'profile' ? (
                         <React.Fragment>
-                            <div className="animate-pop text-center">
-                                <div className="relative inline-block mb-4">
-                                    <img src={user.photoURL || 'https://via.placeholder.com/150'} className="w-24 h-24 rounded-full border-4 border-emerald-500 shadow-xl mx-auto" alt="Avatar" />
-                                    <div className="absolute bottom-0 right-0 bg-emerald-500 w-8 h-8 rounded-full border-4 border-slate-50 flex items-center justify-center text-white text-xs">✏️</div>
+                        <div className="animate-pop flex flex-col gap-6">
+                            <div className="flex flex-col items-center gap-2 mb-4">
+                                <div className="w-24 h-24 rounded-full bg-[#fce0d3] border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Avatar" className="w-20 h-20 mt-4" />
                                 </div>
-                                <h2 className="text-2xl font-bold">{user.displayName || 'Usuario'}</h2>
-                                <p className="text-slate-500 mb-8">{user.email}</p>
+                                <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Carlos</h2>
+                                <p className="text-[#94a3b8] text-sm font-medium">carlos@example.com</p>
+                            </div>
 
-                                <div className="grid gap-4 text-left">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent`}>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase text-slate-500">Presupuesto</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-emerald-500 font-bold">$</span>
-                                                <input
-                                                    type="number"
-                                                    value={budget}
-                                                    onChange={(e) => setBudget(e.target.value)}
-                                                    className="w-16 bg-transparent text-right outline-none text-emerald-500 font-bold"
-                                                />
-                                            </div>
-                                        </div>
+                            <div className="flex flex-col gap-3">
+                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-rounded text-primary">language</span>
+                                        <span className="font-bold text-sm">Idioma</span>
                                     </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent`}>
-                                        <div className="flex items-center justify-between">
-                                            <span>{t.stats}</span>
-                                            <span className="font-bold text-emerald-500">{products.length}</span>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button
-                                            onClick={() => generateQR()}
-                                            className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent font-bold flex flex-col items-center gap-2`}
-                                        >
-                                            <span className="text-2xl">📱</span>
-                                            <span className="text-[10px] uppercase">{t.qrGenerate}</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setIsScanning(true)}
-                                            className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent font-bold flex flex-col items-center gap-2`}
-                                        >
-                                            <span className="text-2xl">📷</span>
-                                            <span className="text-[10px] uppercase">{t.qrScanner}</span>
-                                        </button>
-                                    </div>
-
-                                    <button
-                                        onClick={() => {
-                                            if(confirm(t.confirmDeleteAll)) {
-                                                setProducts([]);
-                                                localStorage.clear();
-                                                window.location.reload();
-                                            }
-                                        }}
-                                        className="w-full p-4 bg-red-50 text-red-500 rounded-3xl font-bold transition-all active:scale-95 border border-red-100"
+                                    <select
+                                        value={lang}
+                                        onChange={(e) => setLang(e.target.value)}
+                                        className={`bg-transparent text-sm font-bold outline-none uppercase ${darkMode ? 'text-white' : 'text-slate-600'}`}
                                     >
-                                        {t.deleteAll}
+                                        {Object.keys(TRANSLATIONS).map(l => (
+                                            <option key={l} value={l}>{l}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-rounded text-primary">{darkMode ? 'dark_mode' : 'light_mode'}</span>
+                                        <span className="font-bold text-sm">Modo Oscuro</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        className={`w-12 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary' : 'bg-slate-200'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${darkMode ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
+
+                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-rounded text-primary">payments</span>
+                                        <span className="font-bold text-sm">Presupuesto</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-primary font-bold text-sm">$</span>
+                                        <input
+                                            type="number"
+                                            value={budget}
+                                            onChange={(e) => setBudget(e.target.value)}
+                                            className="w-16 bg-transparent text-right outline-none font-bold text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mt-2">
+                                    <button
+                                        onClick={() => generateQR()}
+                                        className={`p-4 rounded-3xl border border-slate-100 flex flex-col items-center gap-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
+                                    >
+                                        <span className="material-symbols-rounded text-primary">qr_code_2</span>
+                                        <span className="text-[10px] font-bold uppercase">{t.qrGenerate}</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsScanning(true)}
+                                        className={`p-4 rounded-3xl border border-slate-100 flex flex-col items-center gap-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
+                                    >
+                                        <span className="material-symbols-rounded text-primary">qr_code_scanner</span>
+                                        <span className="text-[10px] font-bold uppercase">{t.qrScanner}</span>
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if(confirm(t.confirmDeleteAll)) {
+                                            setProducts([]);
+                                            localStorage.clear();
+                                            window.location.reload();
+                                        }
+                                    }}
+                                    className="mt-4 p-4 rounded-3xl bg-red-50 text-red-500 font-bold text-sm border border-red-100 active:scale-95 transition-all"
+                                >
+                                    {t.deleteAll}
+                                </button>
                             </div>
 
                             {showQRModal && (
@@ -520,6 +598,7 @@
                                     </div>
                                 </div>
                             )}
+                            </div>
                         </React.Fragment>
                     ) : activeTab === 'cart' ? (
                         <div className="animate-pop">
@@ -853,21 +932,25 @@
                         </div>
                     )}
 
-                    <nav className={`fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] md:max-w-2xl backdrop-blur-xl border rounded-[2.5rem] p-2 flex justify-around shadow-2xl z-50 transition-all ${darkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/80 border-white'}`}>
+                    <nav className={`fixed bottom-0 left-0 w-full py-4 px-6 border-t flex justify-around items-center z-50 transition-all ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-100 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]'}`}>
                         {[
-                            { id: 'pantry', label: t.pantry, icon: '🏠' },
-                            { id: 'add', label: t.add, icon: '➕' },
-                            { id: 'stats', label: t.stats, icon: '📊' },
-                            { id: 'cart', label: t.cart, icon: '🛒' },
-                            { id: 'profile', label: t.profile, icon: '👤' }
+                            { id: 'pantry', label: t.pantry, icon: 'inventory_2' },
+                            { id: 'stats', label: t.stats, icon: 'bar_chart' },
+                            { id: 'cart', label: t.cart, icon: 'shopping_cart' },
+                            { id: 'profile', label: t.profile, icon: 'settings' }
                         ].map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex flex-col items-center px-4 py-2 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'text-slate-400 hover:text-emerald-500'}`}
+                                className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${activeTab === tab.id ? 'text-primary' : 'text-[#94a3b8]'}`}
                             >
-                                <span className="text-lg">{tab.icon}</span>
-                                <span className="text-[10px] font-bold uppercase mt-1">{tab.label}</span>
+                                {tab.id === 'cart' && products.filter(p => p.stock <= p.min).length > 0 && (
+                                    <span className="absolute -top-1 right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
+                                        {products.filter(p => p.stock <= p.min).length}
+                                    </span>
+                                )}
+                                <span className="material-symbols-rounded">{tab.icon}</span>
+                                <span className="text-[10px] font-bold">{tab.label}</span>
                             </button>
                         ))}
                     </nav>
