@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style> 
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'); 
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; } 
@@ -88,6 +89,7 @@
             const [qrData, setQrData] = useState('');
             const [isScanning, setIsScanning] = useState(false);
             const [isAIScanning, setIsAIScanning] = useState(false);
+            const [isTicketScanning, setIsTicketScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
             const [lastCommand, setLastCommand] = useState('');
 
@@ -110,6 +112,8 @@
             const user = { displayName: 'Mi Inventario Local', email: 'Modo Offline Activado' };
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
+            const [budget, setBudget] = useState(100);
 
             const stats = (() => {
                 const now = new Date();
@@ -244,7 +248,14 @@
                 });
                 const personalInflation = inflationCount > 0 ? (totalInflation / inflationCount).toFixed(1) : 0;
 
-                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions };
+                const clusters = {};
+                products.forEach(p => {
+                    const cat = p.category || 'General';
+                    if (!clusters[cat]) clusters[cat] = [];
+                    clusters[cat].push(p.name);
+                });
+
+                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions, clusters };
             })();
 
             if (loading) return (
@@ -331,6 +342,14 @@
                                                     <span className="text-[10px] font-bold text-emerald-600">{stats.predictions[p.id].date}</span>
                                                 </div>
                                             )}
+                                            {['Frutas/Verduras', 'Produce'].includes(p.category) && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="text-[10px] uppercase font-bold text-orange-500">🌡️ Risk:</span>
+                                                    <span className="text-[10px] font-bold text-orange-600">
+                                                        {Math.min(100, ( (new Date() - new Date(p.createdAt)) / (1000*60*60*24) * 20 )).toFixed(0)}%
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -345,12 +364,34 @@
                              <h2 className="text-xl font-bold mb-4">{t.addProductTitle}</h2>
                              <div className="grid gap-3">
                                  <div className="flex gap-2">
-                                     <input id="pName" type="text" placeholder={t.placeholderName} className={`flex-1 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <input
+                                        id="pName"
+                                        type="text"
+                                        placeholder={t.placeholderName}
+                                        onInput={(e) => {
+                                            const val = e.target.value.toLowerCase();
+                                            const match = products.find(p => p.name.toLowerCase().startsWith(val));
+                                            if (val.length > 1 && match) {
+                                                document.getElementById('pCat').value = match.category;
+                                                document.getElementById('pUnit').value = match.unit || 'unid';
+                                                document.getElementById('pLoc').value = match.location || 'Pantry';
+                                            }
+                                        }}
+                                        className={`flex-1 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}
+                                     />
                                      <button
                                         onClick={() => runAIScan()}
+                                        title={t.aiScan}
                                         className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
                                      >
                                         {isAIScanning ? '⌛' : '👁️'}
+                                     </button>
+                                     <button
+                                        onClick={() => scanTicket()}
+                                        title="OCR Ticket"
+                                        className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
+                                     >
+                                        {isTicketScanning ? '⌛' : '🧾'}
                                      </button>
                                  </div>
                                  <div className="flex gap-2">
@@ -403,6 +444,20 @@
                                 <p className="text-slate-500 mb-8">{user.email}</p>
 
                                 <div className="grid gap-4 text-left">
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent`}>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold uppercase text-slate-500">Presupuesto</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-emerald-500 font-bold">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={budget}
+                                                    onChange={(e) => setBudget(e.target.value)}
+                                                    className="w-16 bg-transparent text-right outline-none text-emerald-500 font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent`}>
                                         <div className="flex items-center justify-between">
                                             <span>{t.stats}</span>
@@ -540,7 +595,16 @@
                                             </div>
                                             <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800">
                                                 <p className="text-[10px] font-bold text-emerald-600 uppercase mb-2">💡 {t.suggestions || 'Suggestion'}</p>
-                                                {stats.suggestions.map(s => <p key={s.id} className="text-sm font-bold">🛒 {s.name}</p>)}
+                                                {stats.suggestions.map(s => (
+                                                    <div key={s.id} className="mb-2">
+                                                        <p className="text-sm font-bold">🛒 {s.name}</p>
+                                                        {stats.clusters[s.category] && stats.clusters[s.category].length > 1 && (
+                                                            <p className="text-[9px] text-emerald-500 opacity-70 italic ml-4">
+                                                                + {stats.clusters[s.category].filter(n => n !== s.name).slice(0, 2).join(', ')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
                                                 {stats.suggestions.length === 0 && <p className="text-xs text-slate-400">{t.noData || 'No data'}</p>}
                                             </div>
                                         </div>
@@ -639,6 +703,15 @@
                                                     </span>
                                                 </div>
                                             ))}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">💎 Forgotten Items</p>
+                                        <div className="space-y-1 mt-2">
+                                            {products.filter(p => (p.movementHistory || []).length < 2 && (new Date() - new Date(p.createdAt)) > 30*24*60*60*1000).slice(0, 3).map(p => (
+                                                <div key={p.id} className="text-[10px] font-bold text-blue-500">🏚️ {p.name}</div>
+                                            ))}
+                                            {products.filter(p => (p.movementHistory || []).length < 2 && (new Date() - new Date(p.createdAt)) > 30*24*60*60*1000).length === 0 && <p className="text-[10px] text-slate-400">All moving well</p>}
                                         </div>
                                     </div>
                                     <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
@@ -1111,6 +1184,40 @@
                         if (error) console.error(error);
                     });
                 }, 100);
+            }
+
+            async function scanTicket() {
+                setIsTicketScanning(true);
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) { setIsTicketScanning(false); return; }
+                    try {
+                        const { data: { text } } = await Tesseract.recognize(file, 'spa+eng', { logger: m => console.log(m) });
+                        // Simple parser: lines that look like "Item Price"
+                        const lines = text.split('\n');
+                        const added = [];
+                        lines.forEach(line => {
+                            const match = line.match(/([a-zA-Z\s]+)\s+(\d+[\.,]\d+)/);
+                            if (match) {
+                                const name = match[1].trim();
+                                const price = parseFloat(match[2].replace(',', '.'));
+                                if (name.length > 2) {
+                                    addProduct(name, 1, 1, 'General', '', '', price, 'Pantry', 'unid');
+                                    added.push(name);
+                                }
+                            }
+                        });
+                        alert(lang === 'es' ? `Ticket procesado. Añadidos: ${added.length} productos.` : `Ticket processed. Added: ${added.length} items.`);
+                    } catch (err) {
+                        console.error(err);
+                    } finally {
+                        setIsTicketScanning(false);
+                    }
+                };
+                input.click();
             }
 
             async function runAIScan() {
