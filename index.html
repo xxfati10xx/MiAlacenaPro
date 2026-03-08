@@ -22,97 +22,329 @@
     <div id="root"></div> 
 
     <script type="module">
-        // IMPORTANTE: Configura tus credenciales aquí o mediante una variable global
+        /* global React, ReactDOM */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-        const firebaseConfig = {
+        const firebaseConfig = window.__firebase_config || {
             apiKey: "TU_API_KEY",
             authDomain: "TU_PROYECTO.firebaseapp.com",
             projectId: "TU_PROYECTO_ID",
             storageBucket: "TU_PROYECTO.appspot.com",
             messagingSenderId: "ID_SENDER",
-            appId: "ID_APP"
+            appId: window.__app_id || "ID_APP"
         };
 
-        const app = initializeApp(firebaseConfig);
-        window.FirebaseSDK = { 
-            db: getFirestore(app), auth: getAuth(app), 
-            collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc,
-            signInAnonymously, onAuthStateChanged 
-        };
-        window.dispatchEvent(new Event('firebase-ready'));
+        try {
+            const app = initializeApp(firebaseConfig);
+            window.FirebaseSDK = {
+                db: getFirestore(app), auth: getAuth(app),
+                collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy,
+                signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
+            };
+            window.dispatchEvent(new Event('firebase-ready'));
+        } catch (e) {
+            console.error("Firebase load error", e);
+            window.dispatchEvent(new Event('firebase-error'));
+        }
     </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        const TRANSLATIONS = {
+            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente, sin complicaciones.', googleBtn: 'Continuar con Google', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos' },
+            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory, hassle-free.', googleBtn: 'Continue with Google', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products' },
+            pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente, sem complicações.', googleBtn: 'Continuar com Google', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto' },
+            it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario intelligente, senza problemi.', googleBtn: 'Continua con Google', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto' },
+            fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent, sans tracas.', googleBtn: 'Continuer avec Google', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit' },
+            de: { title: 'MeineVorratskammer', pantry: 'Vorratskammer', add: 'Hinzufügen', cart: 'Warenkorb', profile: 'Profil', stats: 'Statistik', stock: 'Bestand', loading: 'Starten...', loginSub: 'Ihr intelligentes Inventar, stressfrei.', googleBtn: 'Mit Google fortfahren', addProductTitle: 'Produkt hinzufügen', placeholderName: 'z.B. Milch', saveBtn: 'Speichern', logout: 'Abmelden', share: 'Teilen', expiry: 'Ablaufdatum', category: 'Kategorie', search: 'Suche...', empty: 'Keine Produkte' },
+            zh: { title: '我的食品室', pantry: '食品室', add: '添加', cart: '购物车', profile: '个人资料', stats: '统计', stock: '库存', loading: '正在启动...', loginSub: '您的智能库存，省心省力。', googleBtn: '使用 Google 继续', addProductTitle: '添加产品', placeholderName: '例如：牛奶', saveBtn: '保存', logout: '登出', share: '分享', expiry: '有效期', category: '类别', search: '搜索...', empty: '没有产品' },
+            ja: { title: 'マイパントリー', pantry: 'パントリー', add: '追加', cart: 'カート', profile: 'プロフィール', stats: '統計', stock: '在庫', loading: '起動中...', loginSub: '手間いらずのスマートな在庫管理。', googleBtn: 'Google で続行', addProductTitle: '商品を追加', placeholderName: '例：牛乳', saveBtn: '保存', logout: 'ログアウト', share: '共有', expiry: '賞味期限', category: 'カテゴリー', search: '検索...', empty: '商品がありません' },
+            ru: { title: 'МояКладовая', pantry: 'Кладовая', add: 'Добавить', cart: 'Корзина', profile: 'Профиль', stats: 'Статистика', stock: 'Запас', loading: 'Запуск...', loginSub: 'Ваш умный инвентарь без хлопот.', googleBtn: 'Продолжить через Google', addProductTitle: 'Добавить продукт', placeholderName: 'Напр. Молоко', saveBtn: 'Сохранить', logout: 'Выйти', share: 'Поделиться', expiry: 'Срок годности', category: 'Категория', search: 'Поиск...', empty: 'Нет продуктов' },
+            ar: { title: 'خزاناتي', pantry: 'الخزانة', add: 'إضافة', cart: 'العربة', profile: 'الملف الشخصي', stats: 'الإحصائيات', stock: 'المخزون', loading: 'جاري البدء...', loginSub: 'مخزونك الذكي، بدون متاعب.', googleBtn: 'المتابعة باستخدام Google', addProductTitle: 'إضافة منتج', placeholderName: 'مثال: حليب', saveBtn: 'حفظ', logout: 'تسجيل الخروج', share: 'مشاركة', expiry: 'تاريخ الانتهاء', category: 'فئة', search: 'بحث...', empty: 'لا توجد منتجات' }
+        };
+
         function App() {
+            const getIcon = (name, cat) => {
+                const map = {
+                    'Lácteos': '🥛', 'Carnes': '🍖', 'Frutas/Verduras': '🍎', 'Despensa': '🥫',
+                    'Bebidas': '🥤', 'Limpieza': '🧹', 'Higiene': '🧼', 'General': '📦',
+                    'leche': '🥛', 'pan': '🍞', 'huevo': '🥚', 'carne': '🥩', 'pollo': '🍗',
+                    'arroz': '🍚', 'pasta': '🍝', 'agua': '💧', 'cerveza': '🍺', 'vino': '🍷',
+                    'manzana': '🍎', 'platano': '🍌', 'tomate': '🍅', 'cebolla': '🧅'
+                };
+                return map[cat] || map[name.toLowerCase()] || '📦';
+            };
+
+            const [user, setUser] = useState(null);
             const [products, setProducts] = useState([]);
             const [loading, setLoading] = useState(true);
             const [activeTab, setActiveTab] = useState('pantry');
             const [lang, setLang] = useState('es');
+            const [darkMode, setDarkMode] = useState(false);
 
             useEffect(() => {
                 const init = () => {
-                    const { auth, signInAnonymously, onAuthStateChanged, db, collection, onSnapshot } = window.FirebaseSDK;
-                    signInAnonymously(auth).catch(console.error);
+                    const { auth, onAuthStateChanged, db, collection, onSnapshot, query, where } = window.FirebaseSDK;
                     
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) {
-                            const colRef = collection(db, 'pantry');
-                            onSnapshot(colRef, (snapshot) => {
+                    onAuthStateChanged(auth, (u) => {
+                        setUser(u);
+                        if (u) {
+                            const q = query(collection(db, 'pantry'), where("userId", "==", u.uid));
+                            onSnapshot(q, (snapshot) => {
                                 setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
                                 setLoading(false);
                             });
+                        } else {
+                            setProducts([]);
+                            setLoading(false);
                         }
                     });
                 };
                 window.addEventListener('firebase-ready', init);
+                window.addEventListener('firebase-error', () => setLoading(false));
             }, []);
 
-            if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold">Iniciando Alacena...</div>;
+            const handleLogin = async () => {
+                const { auth, GoogleAuthProvider, signInWithPopup } = window.FirebaseSDK;
+                const provider = new GoogleAuthProvider();
+                try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
+            };
+
+            const handleLogout = async () => {
+                const { auth, signOut } = window.FirebaseSDK;
+                try { await signOut(auth); } catch (e) { console.error(e); }
+            };
+
+            const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
+            if (loading) return (
+                <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
+                    <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div className="text-emerald-600 font-bold animate-pulse text-xl tracking-tight">{t.title} Pro</div>
+                </div>
+            );
+
+            if (!user) return (
+                <div className="max-w-md mx-auto min-h-screen flex flex-col items-center justify-center p-8 bg-slate-50">
+                    <div className="glass p-10 rounded-[3rem] shadow-2xl text-center animate-pop border border-white">
+                        <div className="text-6xl mb-6">🛒</div>
+                        <h1 className="text-4xl font-extrabold text-slate-800 mb-2">{t.title}<span className="text-emerald-500">.</span></h1>
+                        <p className="text-slate-500 mb-8 text-lg">{t.loginSub}</p>
+                        <button
+                            onClick={handleLogin}
+                            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 font-bold text-slate-700"
+                        >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+                            {t.googleBtn}
+                        </button>
+                    </div>
+                </div>
+            );
 
             return (
+                <div className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`}>
                 <div className="max-w-md mx-auto min-h-screen pb-24 px-4">
                     <header className="py-8 flex justify-between items-center">
-                        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">MiAlacena<span className="text-emerald-500">.</span></h1>
-                        <div className="flex gap-2">
-                             <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="bg-white px-3 py-1 rounded-full shadow-sm text-xs font-bold uppercase border">{lang}</button>
+                        <h1 className={`text-3xl font-extrabold tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>{t.title}<span className="text-emerald-500">.</span></h1>
+                        <div className="flex gap-2 items-center">
+                             <button
+                                onClick={() => setDarkMode(!darkMode)}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
+                             >
+                                {darkMode ? '🌙' : '☀️'}
+                             </button>
+                             <select
+                                value={lang}
+                                onChange={(e) => setLang(e.target.value)}
+                                className={`px-2 py-1 rounded-full shadow-sm text-xs font-bold uppercase border outline-none ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white'}`}
+                             >
+                                {Object.keys(TRANSLATIONS).map(l => (
+                                    <option key={l} value={l}>{l}</option>
+                                ))}
+                             </select>
                         </div>
                     </header>
 
                     {activeTab === 'pantry' ? (
                         <div className="grid gap-3">
-                            {products.map(p => (
-                                <div key={p.id} className="glass p-4 rounded-3xl border border-white shadow-sm flex justify-between items-center animate-pop">
-                                    <div>
-                                        <h3 className="font-bold text-slate-700">{p.name}</h3>
-                                        <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>Stock: {p.stock}</p>
+                            {products.length === 0 ? (
+                                <p className="text-center text-slate-400 mt-10 animate-pulse">{t.empty}</p>
+                            ) : products.map(p => (
+                                <div key={p.id} className={`${darkMode ? 'bg-slate-800/50 border-slate-700' : 'glass border-white'} p-4 rounded-3xl border shadow-sm flex justify-between items-center animate-pop backdrop-blur-md`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl shadow-inner">
+                                            {p.photo ? <img src={p.photo} className="w-full h-full rounded-2xl object-cover" /> : getIcon(p.name, p.category)}
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-bold ${darkMode ? 'text-slate-100' : 'text-slate-700'}`}>{p.name}</h3>
+                                            <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>{t.stock}: {p.stock}</p>
+                                            {p.expiry && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">{t.expiry}:</span>
+                                                    <span className={`text-[10px] font-bold ${
+                                                        new Date(p.expiry) < new Date() ? 'text-red-500' :
+                                                        (new Date(p.expiry) - new Date()) / (1000*60*60*24) < 3 ? 'text-orange-500' : 'text-slate-400'
+                                                    }`}>
+                                                        {new Date(p.expiry).toLocaleDateString(lang)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <button onClick={() => updateQty(p.id, p.stock - 1)} className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-lg">-</button>
+                                        <button onClick={() => updateQty(p.id, p.stock - 1)} className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg ${darkMode ? 'bg-slate-700 text-white' : 'bg-slate-100'}`}>-</button>
                                         <button onClick={() => updateQty(p.id, p.stock + 1)} className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-lg">+</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
+                    ) : activeTab === 'add' ? (
+                        <div className={`animate-pop p-6 rounded-[2.5rem] shadow-xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                             <h2 className="text-xl font-bold mb-4">{t.addProductTitle}</h2>
+                             <div className="grid gap-3">
+                                 <input id="pName" type="text" placeholder={t.placeholderName} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                 <div className="flex gap-2">
+                                     <input id="pStock" type="number" placeholder={t.stock} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <input id="pMin" type="number" placeholder="Min" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                 </div>
+                                 <select id="pCat" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
+                                     {['General', 'Lácteos', 'Carnes', 'Frutas/Verduras', 'Despensa', 'Bebidas', 'Limpieza', 'Higiene'].map(c => <option key={c} value={c}>{c}</option>)}
+                                 </select>
+                                 <input id="pExpiry" type="date" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                 <input id="pPhoto" type="text" placeholder="URL Foto (Opcional)" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                 <button onClick={() => {
+                                     const name = document.getElementById('pName').value;
+                                     const stock = document.getElementById('pStock').value;
+                                     const min = document.getElementById('pMin').value;
+                                     const cat = document.getElementById('pCat').value;
+                                     const exp = document.getElementById('pExpiry').value;
+                                     const photo = document.getElementById('pPhoto').value;
+                                     if(name) addProduct(name, stock, min, cat, exp, photo);
+                                 }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-2">{t.saveBtn}</button>
+                             </div>
+                        </div>
+                    ) : activeTab === 'profile' ? (
+                        <div className="animate-pop text-center">
+                            <div className="relative inline-block mb-4">
+                                <img src={user.photoURL || 'https://via.placeholder.com/150'} className="w-24 h-24 rounded-full border-4 border-emerald-500 shadow-xl mx-auto" alt="Avatar" />
+                                <div className="absolute bottom-0 right-0 bg-emerald-500 w-8 h-8 rounded-full border-4 border-slate-50 flex items-center justify-center text-white text-xs">✏️</div>
+                            </div>
+                            <h2 className="text-2xl font-bold">{user.displayName || 'Usuario'}</h2>
+                            <p className="text-slate-500 mb-8">{user.email}</p>
+
+                            <div className="grid gap-4 text-left">
+                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-4 rounded-3xl shadow-sm border border-transparent`}>
+                                    <div className="flex items-center justify-between">
+                                        <span>{t.stats}</span>
+                                        <span className="font-bold text-emerald-500">{products.length}</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full p-4 bg-red-50 text-red-500 rounded-3xl font-bold transition-all active:scale-95 border border-red-100"
+                                >
+                                    {t.logout}
+                                </button>
+                            </div>
+                        </div>
+                    ) : activeTab === 'cart' ? (
+                        <div className="animate-pop">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">{t.cart}</h2>
+                                <button
+                                    onClick={() => {
+                                        const list = products.filter(p => p.stock <= p.min).map(p => `- ${p.name} (${p.stock}/${p.min})`).join('\n');
+                                        if (navigator.share) {
+                                            navigator.share({ title: t.cart, text: list });
+                                        } else {
+                                            alert(list);
+                                        }
+                                    }}
+                                    className="bg-emerald-500 text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-lg"
+                                >
+                                    {t.share} 📤
+                                </button>
+                            </div>
+                            <div className="grid gap-3">
+                                {products.filter(p => p.stock <= p.min).length === 0 ? (
+                                    <p className="text-center text-slate-400 mt-10">✨ Todo en orden</p>
+                                ) : products.filter(p => p.stock <= p.min).map(p => (
+                                    <div key={p.id} className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'} p-4 rounded-3xl border shadow-sm flex justify-between items-center`}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xl">{getIcon(p.name, p.category)}</div>
+                                            <div>
+                                                <h3 className="font-bold">{p.name}</h3>
+                                                <p className="text-xs text-red-500 font-bold">{t.stock}: {p.stock} / Min: {p.min}</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => updateQty(p.id, p.stock + 1)} className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">🛒</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : activeTab === 'stats' ? (
+                        <div className="animate-pop">
+                            <h2 className="text-2xl font-bold mb-6">{t.stats}</h2>
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.title}</p>
+                                    <p className="text-3xl font-extrabold text-emerald-500">{products.length}</p>
+                                </div>
+                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.cart}</p>
+                                    <p className="text-3xl font-extrabold text-red-500">{products.filter(p => p.stock <= p.min).length}</p>
+                                </div>
+                            </div>
+
+                            <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm mb-6`}>
+                                <h3 className="font-bold mb-4">{t.category}</h3>
+                                <div className="space-y-4">
+                                    {[...new Set(products.map(p => p.category || 'General'))].map(cat => {
+                                        const count = products.filter(p => (p.category || 'General') === cat).length;
+                                        const pct = (count / (products.length || 1)) * 100;
+                                        return (
+                                            <div key={cat}>
+                                                <div className="flex justify-between text-xs font-bold mb-1 uppercase text-slate-500">
+                                                    <span>{cat}</span>
+                                                    <span>{count}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${pct}%` }}></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
                     ) : (
-                        <div className="animate-pop bg-white p-6 rounded-[2.5rem] shadow-xl border">
-                             <h2 className="text-xl font-bold mb-4">Añadir Producto</h2>
-                             <input id="pName" type="text" placeholder="Ej. Leche" className="w-full p-4 bg-slate-50 rounded-2xl mb-4 outline-none focus:ring-2 ring-emerald-400" />
-                             <button onClick={() => {
-                                 const name = document.getElementById('pName').value;
-                                 if(name) addProduct(name);
-                             }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200">Guardar en Alacena</button>
+                        <div className="animate-pop text-center py-20 text-slate-400 font-bold">
+                            [ERROR 404] <br/> Tab no encontrada
                         </div>
                     )}
 
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[85%] glass border border-white rounded-[2.5rem] p-2 flex justify-around shadow-2xl">
-                        <button onClick={() => setActiveTab('pantry')} className={`px-6 py-3 rounded-full transition-all ${activeTab === 'pantry' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400'}`}>Alacena</button>
-                        <button onClick={() => setActiveTab('add')} className={`px-6 py-3 rounded-full transition-all ${activeTab === 'add' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400'}`}>+ Añadir</button>
+                    <nav className={`fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] backdrop-blur-xl border rounded-[2.5rem] p-2 flex justify-around shadow-2xl z-50 transition-all ${darkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white/80 border-white'}`}>
+                        {[
+                            { id: 'pantry', label: t.pantry, icon: '🏠' },
+                            { id: 'add', label: t.add, icon: '➕' },
+                            { id: 'stats', label: t.stats, icon: '📊' },
+                            { id: 'cart', label: t.cart, icon: '🛒' },
+                            { id: 'profile', label: t.profile, icon: '👤' }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex flex-col items-center px-4 py-2 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'text-slate-400 hover:text-emerald-500'}`}
+                            >
+                                <span className="text-lg">{tab.icon}</span>
+                                <span className="text-[10px] font-bold uppercase mt-1">{tab.label}</span>
+                            </button>
+                        ))}
                     </nav>
+                </div>
                 </div>
             );
 
@@ -122,9 +354,18 @@
                 await updateDoc(doc(db, 'pantry', id), { stock: newVal });
             }
 
-            async function addProduct(name) {
+            async function addProduct(name, stock, min, category, expiry, photo) {
                 const { db, collection, addDoc } = window.FirebaseSDK;
-                await addDoc(collection(db, 'pantry'), { name, stock: 1, min: 1, category: 'General' });
+                await addDoc(collection(db, 'pantry'), {
+                    name,
+                    stock: parseInt(stock) || 1,
+                    min: parseInt(min) || 1,
+                    category: category || 'General',
+                    expiry: expiry || '',
+                    photo: photo || '',
+                    userId: user.uid,
+                    createdAt: new Date().toISOString()
+                });
                 setActiveTab('pantry');
             }
         }
