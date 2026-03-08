@@ -92,12 +92,19 @@
             useEffect(() => { localStorage.setItem('pantry_reminderDays', reminderDays); }, [reminderDays]);
 
             const loginWithGoogle = () => {
-                if (typeof firebase === 'undefined') return alert("Firebase no cargado");
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    return alert("Firebase no cargado correctamente.");
+                }
                 const provider = new firebase.auth.GoogleAuthProvider();
                 firebase.auth().signInWithPopup(provider).then((result) => {
-                    setProfileName(result.user.displayName);
-                    setProfileAvatar(result.user.photoURL);
-                }).catch((error) => console.error(error));
+                    if (result.user) {
+                        setProfileName(result.user.displayName || 'Usuario');
+                        setProfileAvatar(result.user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.user.displayName}`);
+                    }
+                }).catch((error) => {
+                    console.error("Auth Error:", error);
+                    alert("Error al iniciar sesión: " + error.message);
+                });
             };
 
             const requestNotificationPermission = () => {
@@ -1213,11 +1220,13 @@
 
             useEffect(() => {
                 if (isScanning) {
-                    const html5QrCode = new Html5Qrcode("reader");
-                    html5QrCode.start(
-                        { facingMode: "environment" },
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
-                        (decodedText) => {
+                    // Esperar a que el DOM se actualice para encontrar el elemento #reader
+                    const timer = setTimeout(() => {
+                        const html5QrCode = new Html5Qrcode("reader");
+                        html5QrCode.start(
+                            { facingMode: "environment" },
+                            { fps: 10, qrbox: { width: 250, height: 250 } },
+                            (decodedText) => {
                             try {
                                 const importedData = JSON.parse(decodedText);
                                 if (Array.isArray(importedData)) {
@@ -1244,9 +1253,11 @@
                             }
                         },
                         (errorMessage) => {}
-                    ).catch(err => console.error("Error starting scanner", err));
+                        ).catch(err => console.error("Error starting scanner", err));
 
-                    window.__qrScanner = html5QrCode;
+                        window.__qrScanner = html5QrCode;
+                    }, 500);
+                    return () => clearTimeout(timer);
                 }
             }, [isScanning]);
 
@@ -1329,17 +1340,17 @@
 
             function handleVoiceCommand(cmd) {
                 console.log("Voice Command:", cmd);
+                const words = cmd.split(' ');
 
                 // 1. Auditoría Interactiva (Continuación)
                 if (auditQueue.length > 0) {
-                    const words = cmd.split(' ');
                     const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','una','dos','tres','one','only'].includes(w)));
                     const p = auditQueue[0];
                     updateQty(p.id, qty);
 
-                    let feedback = lang === 'es' ? `Entendido, bajando stock de ${p.name} a ${qty}` : `Got it, setting ${p.name} stock to ${qty}`;
+                    let feedback = lang === 'es' ? `Entendido, stock de ${p.name} actualizado a ${qty}` : `Got it, ${p.name} stock updated to ${qty}`;
                     if (qty <= p.min) {
-                        feedback += lang === 'es' ? " y agregando a la lista de compras." : " and adding to the shopping list.";
+                        feedback += lang === 'es' ? " y marcado para comprar." : " and marked for purchase.";
                     }
 
                     const nextQueue = auditQueue.slice(1);
@@ -1396,37 +1407,47 @@
                     }
                 }
 
-                // 4. Entrada Rápida: "Añadir [n] [unid] [prod] vence en [mes]"
-                if (cmd.includes('añadir') || cmd.includes('agregar') || cmd.includes('add')) {
-                    const words = cmd.split(' ');
-                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','four','five'].includes(w)));
-                    const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
-                    const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
+                // 4. Gestión de Productos (Añadir/Quitar/Consultar)
+                const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco'].includes(w))) || 1;
 
-                    const unitMap = {
-                        'litros': 'litros', 'litros': 'litros', 'liters': 'liters',
-                        'kilos': 'kilos', 'kilo': 'kilos', 'kilogramos': 'kilos', 'kg': 'kilos',
-                        'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
-                        'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
-                    };
+                // Buscar si se menciona algún producto existente
+                const product = products.find(p => cmd.includes(p.name.toLowerCase()));
 
-                    let foundUnit = 'unid';
-                    words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
-
-                    const pName = words.slice(startIdx, endIdx > -1 ? endIdx : words.length)
-                        .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))
-                        .join(' ').trim();
-
-                    let expiry = '';
-                    if (endIdx > -1) {
-                        expiry = parseMonth(words[words.length - 1]) || '';
+                if (cmd.includes('añadir') || cmd.includes('comprar') || cmd.includes('agregar') || cmd.includes('add')) {
+                    if (product) {
+                        updateQty(product.id, product.stock + qty);
+                        speak(lang === 'es' ? `Añadido ${qty} a ${product.name}. Nuevo stock: ${product.stock + qty}` : `Added ${qty} to ${product.name}. New stock: ${product.stock + qty}`);
+                    } else {
+                        // Extraer nombre (lo que no sea comando ni número ni unidad)
+                        const unitMap = ['litros','kilos','gramos','unid','unidades','liters','grams','units'];
+                        const noise = ['añadir','comprar','agregar','add','vence','caduca','en'];
+                        const pName = words.filter(w => !noise.includes(w) && isNaN(parseInt(w)) && !unitMap.includes(w) && !['uno','dos','tres'].includes(w)).join(' ').trim();
+                        if (pName) {
+                            addProduct(pName, qty, 1, 'General', '', '', 0, 'Pantry', 'unid');
+                            speak(lang === 'es' ? `Creado nuevo producto: ${pName} con ${qty} unidades.` : `Created new product: ${pName} with ${qty} units.`);
+                        }
                     }
+                    return;
+                }
 
-                    if (pName) {
-                        addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry', foundUnit);
-                        speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${foundUnit} ${pName}` + (expiry ? ` ${lang === 'es' ? 'que vence en' : 'expiring in'} ${words[words.length-1]}` : ''));
-                        return;
+                if (cmd.includes('quitar') || cmd.includes('gastar') || cmd.includes('consumir') || cmd.includes('remove') || cmd.includes('spend')) {
+                    if (product) {
+                        const newStock = Math.max(0, product.stock - qty);
+                        updateQty(product.id, newStock);
+                        speak(lang === 'es' ? `Quitado ${qty} de ${product.name}. Quedan ${newStock}` : `Removed ${qty} from ${product.name}. ${newStock} left`);
+                    } else {
+                        speak(lang === 'es' ? "No encontré ese producto para quitar stock." : "I couldn't find that product to remove stock.");
                     }
+                    return;
+                }
+
+                if (cmd.includes('cuántos') || cmd.includes('consulta') || cmd.includes('información') || cmd.includes('how many') || cmd.includes('info')) {
+                    if (product) {
+                        speak(lang === 'es' ? `Tienes ${product.stock} ${product.unit} de ${product.name}.` : `You have ${product.stock} ${product.unit} of ${product.name}.`);
+                    } else {
+                        speak(lang === 'es' ? "No encontré información sobre ese producto." : "I couldn't find info about that product.");
+                    }
+                    return;
                 }
 
                 // 5. Resumen Coach (Resumen Matutino)
