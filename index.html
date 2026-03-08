@@ -43,8 +43,8 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Vence', category: 'Categoría', search: 'Buscar en mi alacena...', empty: 'No hay productos', editTitle: 'Detalle de Producto', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...', seeAll: 'Ver Todo', greeting: '¡Buenos días!', hello: 'Hola', soon: 'pronto', alert: 'alerta' },
-            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Settings', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Exp.', category: 'Category', search: 'Search in my pantry...', empty: 'No products', editTitle: 'Product Detail', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Low', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...', seeAll: 'See All', greeting: 'Good morning!', hello: 'Hello', soon: 'soon', alert: 'alert' },
+            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Vence', category: 'Categoría', search: 'Buscar en mi alacena...', empty: 'No hay productos', editTitle: 'Detalle de Producto', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...', seeAll: 'Ver Todo', greeting: '¡Buenos días!', hello: 'Hola', soon: 'pronto', alert: 'alerta', statHealth: 'Salud de Despensa', statLeaks: 'Fugas de Dinero', healthCoach: 'Coach de Salud', moneyAdvice: 'Consejo Financiero', proteins: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', fiber: 'Fibra', balanced: 'Balanceada', unbalanced: 'Desbalanceada', fiberAlert: 'Falta fibra y proteína verde', processingAlert: 'Exceso de ultraprocesados', leakAlert: 'Has tirado mucho de este producto. Intenta comprar menos o congelarlo.' },
+            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Settings', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Exp.', category: 'Category', search: 'Search in my pantry...', empty: 'No products', editTitle: 'Product Detail', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Low', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...', seeAll: 'See All', greeting: 'Good morning!', hello: 'Hello', soon: 'soon', alert: 'alert', statHealth: 'Pantry Health', statLeaks: 'Money Leaks', healthCoach: 'Health Coach', moneyAdvice: 'Money Advice', proteins: 'Proteins', carbs: 'Carbs', fats: 'Fats', fiber: 'Fiber', balanced: 'Balanced', unbalanced: 'Unbalanced', fiberAlert: 'Fiber and green protein missing', processingAlert: 'Too many processed foods', leakAlert: 'You have wasted a lot of this product. Try buying less or freezing it.' },
             pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Estoque', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Estoque Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir producto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Preço', location: 'Localização', locFridge: 'Frigorífico', locFreezer: 'Congelador', locPantry: 'Despensa Principal', locOther: 'Outro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdício', consumptionFreq: 'Frequência de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Mais Usados', outOfStock: 'Esgotados', avgLife: 'Vida Útil Média', statStock: 'Gestão de Estoque', statWaste: 'Controle de Desperdício', statFinance: 'Finanças e Gastos', statHabits: 'Uso e Hábitos', days: 'dias', recipes: 'Receitas', recipeCoverage: 'Cobertura de Receitas', underMin: 'Abaixo do Mínimo', priceHistory: 'Histórico de Preços', wasteBtn: 'Marcar como Desperdício', suggestions: 'Sugestões', noData: 'Sem dados' },
             it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario inteligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene', price: 'Prezzo', location: 'Posizione', locFridge: 'Frigorifero', locFreezer: 'Congelatore', locPantry: 'Dispensa Principale', locOther: 'Altro', totalValue: 'Valore Totale', wasteIndex: 'Indice di Spreco', consumptionFreq: 'Frequenza di Consumo', nextPurchase: 'Prossimo Acquisto', topUsed: 'Più Usati', outOfStock: 'Esauriti', avgLife: 'Vita Media', statStock: 'Gestione Scorte', statWaste: 'Controllo Sprechi', statFinance: 'Finanza e Spese', statHabits: 'Uso e Abitudini', days: 'giorni', recipes: 'Ricette', recipeCoverage: 'Copertura Ricette', underMin: 'Sotto Minimo', priceHistory: 'Cronologia Prezzi', wasteBtn: 'Segna come Spreco', suggestions: 'Suggerimenti', noData: 'Nessun dato' },
             fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène', price: 'Prix', location: 'Emplacement', locFridge: 'Réfrigérateur', locFreezer: 'Congélateur', locPantry: 'Garde-manger Principal', locOther: 'Autre', totalValue: 'Valeur Totale', wasteIndex: 'Indice de Gaspillage', consumptionFreq: 'Fréquence de Consommation', nextPurchase: 'Prochain Achat', topUsed: 'Plus Utilisés', outOfStock: 'Épuisés', avgLife: 'Durée de Vie Moyenne', statStock: 'Gestion des Stocks', statWaste: 'Contrôle du Gaspillage', statFinance: 'Finances et Dépenses', statHabits: 'Usage et Habitudes', days: 'jours', recipes: 'Recettes', recipeCoverage: 'Couverture des Recettes', underMin: 'Sous le Minimum', priceHistory: 'Historique des Prix', wasteBtn: 'Marquer comme Gaspillage', suggestions: 'Suggestions', noData: 'Pas de données' },
@@ -68,6 +68,17 @@
         if (typeof firebase !== 'undefined') {
             firebase.initializeApp(firebaseConfig);
         }
+
+        const NUTRIENT_MAP = {
+            'Lácteos': { p: 15, c: 15, f: 30, fb: 0 },
+            'Carnes': { p: 60, c: 0, f: 40, fb: 0 },
+            'Frutas/Verduras': { p: 5, c: 40, f: 5, fb: 50 },
+            'Despensa': { p: 10, c: 60, f: 20, fb: 10 },
+            'Dairy': { p: 15, c: 15, f: 30, fb: 0 },
+            'Meats': { p: 60, c: 0, f: 40, fb: 0 },
+            'Produce': { p: 5, c: 40, f: 5, fb: 50 },
+            'Pantry': { p: 10, c: 60, f: 20, fb: 10 }
+        };
 
         function App() {
             const [profileName, setProfileName] = useState(() => localStorage.getItem('pantry_profileName') || 'Carlos');
@@ -309,7 +320,38 @@
                     clusters[cat].push(p.name);
                 });
 
-                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions, clusters };
+                // Pantry Health Analysis
+                let totalP = 0, totalC = 0, totalF = 0, totalFB = 0;
+                products.forEach(p => {
+                    const nutrients = NUTRIENT_MAP[p.category] || { p: 10, c: 70, f: 15, fb: 5 }; // Default more carb-heavy
+                    totalP += (nutrients.p * p.stock);
+                    totalC += (nutrients.c * p.stock);
+                    totalF += (nutrients.f * p.stock);
+                    totalFB += (nutrients.fb * p.stock);
+                });
+                const totalN = totalP + totalC + totalF;
+                const macros = totalN > 0 ? {
+                    p: (totalP / totalN * 100).toFixed(0),
+                    c: (totalC / totalN * 100).toFixed(0),
+                    f: (totalF / totalN * 100).toFixed(0),
+                    fb: totalFB.toFixed(0)
+                } : { p: 0, c: 0, f: 0, fb: 0 };
+
+                const healthAlerts = [];
+                if (totalN > 0) {
+                    if (parseInt(macros.c) > 70) healthAlerts.push(t.processingAlert);
+                    if (parseInt(macros.p) < 15 || parseInt(macros.fb) < 20) healthAlerts.push(t.fiberAlert);
+                }
+
+                // Money Leak Detection
+                const leaks = products.map(p => {
+                    const wasted = (p.movementHistory || []).filter(m => m.type === 'waste').reduce((acc, m) => acc + m.qty, 0);
+                    const cost = wasted * (p.price || 0);
+                    const moves = (p.movementHistory || []).filter(m => m.type === 'add').length;
+                    return { id: p.id, name: p.name, cost, moves, wasted };
+                }).filter(l => l.cost > 0 || l.moves > 5).sort((a, b) => b.cost - a.cost);
+
+                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions, clusters, macros, healthAlerts, leaks };
             })();
 
             if (loading) return (
@@ -825,6 +867,45 @@
                                 </div>
                             </section>
 
+                            {/* Salud de Despensa */}
+                            <section className="mb-8">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">🥗 {t.statHealth}</h3>
+                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.healthCoach}</p>
+                                            <p className={`text-lg font-bold ${stats.healthAlerts.length > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                                {stats.healthAlerts.length > 0 ? t.unbalanced : t.balanced}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.fiber}</p>
+                                            <p className="text-lg font-bold text-blue-500">{stats.macros.fb}g</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4 mb-6">
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.proteins}</div>
+                                            <div className="text-xl font-black text-red-400">{stats.macros.p}%</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.carbs}</div>
+                                            <div className="text-xl font-black text-orange-400">{stats.macros.c}%</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.fats}</div>
+                                            <div className="text-xl font-black text-yellow-400">{stats.macros.f}%</div>
+                                        </div>
+                                    </div>
+                                    {stats.healthAlerts.map((alert, i) => (
+                                        <div key={i} className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-2xl text-orange-600 dark:text-orange-400 text-xs font-bold mb-2">
+                                            <span className="material-symbols-rounded !text-sm">lightbulb</span>
+                                            {alert}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
                             {/* Finanzas y Gastos */}
                             <section className="mb-8">
                                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">💰 {t.statFinance}</h3>
@@ -840,8 +921,23 @@
                                         </div>
                                     </div>
                                     <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.statLeaks}</p>
+                                        <div className="space-y-3">
+                                            {stats.leaks.slice(0, 3).map(leak => (
+                                                <div key={leak.id} className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-xs font-bold truncate">{leak.name}</span>
+                                                        <span className="text-xs font-bold text-red-500">{currencySymbol}{leak.cost.toFixed(2)}</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-400 italic leading-tight">{t.leakAlert}</p>
+                                                </div>
+                                            ))}
+                                            {stats.leaks.length === 0 && <p className="text-xs text-slate-400 italic">{t.noData}</p>}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent col-span-full`}>
                                         <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.category}</p>
-                                        <div className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                                             {Object.entries(stats.categoryStats).map(([cat, val]) => (
                                                 <div key={cat}>
                                                     <div className="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-500">
