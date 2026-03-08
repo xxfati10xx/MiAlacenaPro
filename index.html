@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -53,7 +55,49 @@
             ar: { title: 'خزاناتي', pantry: 'الخزانة', add: 'إضافة', cart: 'العربة', profile: 'الملف الشخصي', stats: 'الإحصائيات', stock: 'المخزون', loading: 'جاري البدء...', loginSub: 'مخزونك الذكي.', addProductTitle: 'إضافة منتج', placeholderName: 'مثال: حليب', saveBtn: 'حفظ', logout: 'تسجيل الخروج', share: 'مشاركة', expiry: 'تاريخ الانتهاء', category: 'فئة', search: 'بحث...', empty: 'لا توجد منتجات', editTitle: 'تحديث الشراء', stockActual: 'المخزون الحالي', minimum: 'الحد الأدنى', deleteBtn: 'حذف', productLabel: 'المنتج', photoUrl: 'رابط الصورة (اختياري)', confirmDelete: 'حذف المنتج؟', deleteAll: 'مسح الكل', confirmDeleteAll: 'مسح جميع البيانات المحلية؟', allClear: '✨ كل شيء على ما يرام', catGeneral: 'عام', catDairy: 'ألبan', catMeat: 'لحوم', catProduce: 'فواكه/خضروات', catPantry: 'الخزانة', catDrinks: 'مشروبات', catCleaning: 'تنظيف', catHygiene: 'نظافة شخصية', price: 'السعر', location: 'الموقع', locFridge: 'الثلاجة', locFreezer: 'المجمدة', locPantry: 'المخزن الرئيسي', locOther: 'أخرى', totalValue: 'القيمة الإجمالية', wasteIndex: 'مؤشر الهدر', consumptionFreq: 'تكرار الاستهلاك', nextPurchase: 'الشراء القادم', topUsed: 'الأكثر استخداماً', outOfStock: 'نفد من المخزون', avgLife: 'متوسط العمر', statStock: 'إدارة المخزون', statWaste: 'مراقبة الهدر', statFinance: 'المالية والمصاريف', statHabits: 'الاستخدام والعادات', days: 'أيام', recipes: 'وصفات', recipeCoverage: 'تغطية الوصفات', underMin: 'تحت الحد الأدنى', priceHistory: 'تاريخ الأسعار', wasteBtn: 'تمييز كنفايات', suggestions: 'اقتراحات', noData: 'لا توجد بيانات' }
         };
 
+        /* global firebase */
+        const firebaseConfig = window.__firebase_config || {
+            apiKey: "demo-key",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo-project",
+            storageBucket: "demo.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: window.__app_id || "1:000000000000:web:0000000000000000000000"
+        };
+
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+        }
+
         function App() {
+            const [profileName, setProfileName] = useState(() => localStorage.getItem('pantry_profileName') || 'Carlos');
+            const [profileAvatar, setProfileAvatar] = useState(() => localStorage.getItem('pantry_profileAvatar') || `https://api.dicebear.com/7.x/avataaars/svg?seed=${localStorage.getItem('pantry_profileName') || 'Carlos'}`);
+            const [currencySymbol, setCurrencySymbol] = useState(() => localStorage.getItem('pantry_currency') || '$');
+            const [reminderDays, setReminderDays] = useState(() => parseInt(localStorage.getItem('pantry_reminderDays')) || 3);
+
+            useEffect(() => { localStorage.setItem('pantry_profileName', profileName); }, [profileName]);
+            useEffect(() => { localStorage.setItem('pantry_profileAvatar', profileAvatar); }, [profileAvatar]);
+            useEffect(() => { localStorage.setItem('pantry_currency', currencySymbol); }, [currencySymbol]);
+            useEffect(() => { localStorage.setItem('pantry_reminderDays', reminderDays); }, [reminderDays]);
+
+            const loginWithGoogle = () => {
+                if (typeof firebase === 'undefined') return alert("Firebase no cargado");
+                const provider = new firebase.auth.GoogleAuthProvider();
+                firebase.auth().signInWithPopup(provider).then((result) => {
+                    setProfileName(result.user.displayName);
+                    setProfileAvatar(result.user.photoURL);
+                }).catch((error) => console.error(error));
+            };
+
+            const requestNotificationPermission = () => {
+                if (!("Notification" in window)) return alert("Este navegador no soporta notificaciones.");
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("¡Listo!", { body: `Te avisaremos ${reminderDays} días antes de que venzan tus productos.` });
+                    }
+                });
+            };
+
             const getIcon = (name, cat) => {
                 const map = {
                     'Lácteos': '🥛', 'Carnes': '🍖', 'Frutas/Verduras': '🍎', 'Despensa': '🥫',
@@ -281,11 +325,11 @@
                     <header className="pt-8 pb-6 flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-full bg-[#fce0d3] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Avatar" className="w-10 h-10 mt-2" />
+                                <img src={profileAvatar} alt="Avatar" className="w-10 h-10 mt-2" />
                             </div>
                             <div>
                                 <p className="text-[#94a3b8] text-xs font-medium">{t.greeting}</p>
-                                <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{t.hello}, Carlos</h1>
+                                <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{t.hello}, {profileName}</h1>
                             </div>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -336,7 +380,7 @@
                                 <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#fff1f2]'}`}>
                                     <p className="text-[10px] text-[#e11d48] font-bold uppercase tracking-wider">{t.expiry}</p>
                                     <h2 className="text-2xl font-extrabold text-[#e11d48]">
-                                        {products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) / (1000*60*60*24) < 3).length.toString().padStart(2, '0')}
+                                        {products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) / (1000*60*60*24) < reminderDays).length.toString().padStart(2, '0')}
                                     </h2>
                                     <div className="flex items-center gap-1 text-[#e11d48] text-[10px] font-bold">
                                         <span className="material-symbols-rounded !text-[14px]">event_busy</span>
@@ -491,10 +535,30 @@
                         <div className="animate-pop flex flex-col gap-6">
                             <div className="flex flex-col items-center gap-2 mb-4">
                                 <div className="w-24 h-24 rounded-full bg-[#fce0d3] border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Avatar" className="w-20 h-20 mt-4" />
+                                    <img src={profileAvatar} alt="Avatar" className="w-20 h-20 mt-4" />
                                 </div>
-                                <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Carlos</h2>
-                                <p className="text-[#94a3b8] text-sm font-medium">carlos@example.com</p>
+                                <div className="flex flex-col items-center gap-1 w-full max-w-[200px]">
+                                    <input
+                                        type="text"
+                                        value={profileName}
+                                        onChange={(e) => setProfileName(e.target.value)}
+                                        className={`text-2xl font-bold text-center w-full bg-transparent outline-none focus:border-b-2 border-primary ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="URL de Avatar"
+                                        value={profileAvatar}
+                                        onChange={(e) => setProfileAvatar(e.target.value)}
+                                        className="text-[10px] text-[#94a3b8] text-center w-full bg-transparent outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => loginWithGoogle()}
+                                    className={`mt-2 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-white border shadow-sm hover:bg-slate-50'}`}
+                                >
+                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" />
+                                    Google Login
+                                </button>
                             </div>
 
                             <div className="flex flex-col gap-3">
@@ -530,16 +594,43 @@
                                 <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
                                     <div className="flex items-center gap-3">
                                         <span className="material-symbols-rounded text-primary">payments</span>
-                                        <span className="font-bold text-sm">Presupuesto</span>
+                                        <span className="font-bold text-sm">Divisa y Presupuesto</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-primary font-bold text-sm">$</span>
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            value={currencySymbol}
+                                            onChange={(e) => setCurrencySymbol(e.target.value)}
+                                            className={`bg-transparent text-sm font-bold outline-none ${darkMode ? 'text-white' : 'text-slate-600'}`}
+                                        >
+                                            {['$', '₡', '€', '£', '¥'].map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
                                         <input
                                             type="number"
                                             value={budget}
                                             onChange={(e) => setBudget(e.target.value)}
                                             className="w-16 bg-transparent text-right outline-none font-bold text-sm"
                                         />
+                                    </div>
+                                </div>
+
+                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-rounded text-primary">notifications_active</span>
+                                        <span className="font-bold text-sm">Alertas (días antes)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={reminderDays}
+                                            onChange={(e) => setReminderDays(e.target.value)}
+                                            className="w-10 bg-transparent text-center outline-none font-bold text-sm"
+                                        />
+                                        <button
+                                            onClick={() => requestNotificationPermission()}
+                                            className="p-2 rounded-full bg-primary/10 text-primary"
+                                        >
+                                            <span className="material-symbols-rounded !text-lg">notifications</span>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -740,7 +831,7 @@
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
                                         <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.totalValue}</p>
-                                        <p className="text-4xl font-black text-emerald-600">${stats.totalValue.toFixed(2)}</p>
+                                        <p className="text-4xl font-black text-emerald-600">{currencySymbol}{stats.totalValue.toFixed(2)}</p>
                                         <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                                             <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.inflation}</p>
                                             <p className={`text-xl font-black ${stats.personalInflation > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
@@ -755,7 +846,7 @@
                                                 <div key={cat}>
                                                     <div className="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-500">
                                                         <span>{getCategoryLabel(cat)}</span>
-                                                        <span>${val.toFixed(2)}</span>
+                                                        <span>{currencySymbol}{val.toFixed(2)}</span>
                                                     </div>
                                                     <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                                         <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${(val / (stats.totalValue || 1)) * 100}%` }}></div>
@@ -892,7 +983,7 @@
                                             {editingProduct.priceHistory.slice(-5).reverse().map((ph, idx) => (
                                                 <div key={idx} className="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl text-center min-w-[70px] border border-slate-100 dark:border-slate-600">
                                                     <div className="text-[9px] text-slate-400">{new Date(ph.date).toLocaleDateString(lang, {month:'short', day:'numeric'})}</div>
-                                                    <div className="text-xs font-bold text-emerald-600">${ph.price}</div>
+                                                    <div className="text-xs font-bold text-emerald-600">{currencySymbol}{ph.price}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -1297,7 +1388,7 @@
                         });
 
                         if (detected.length > 0) {
-                            const confirmList = detected.map(d => `${d.name}: $${d.price}`).join('\n');
+                            const confirmList = detected.map(d => `${d.name}: ${currencySymbol}${d.price}`).join('\n');
                             if (confirm((lang === 'es' ? '¿Añadir estos productos?\n\n' : 'Add these items?\n\n') + confirmList)) {
                                 detected.forEach(d => addProduct(d.name, 1, 1, 'General', '', '', d.price, 'Pantry', 'unid'));
                                 speak(lang === 'es' ? `Añadidos ${detected.length} productos` : `Added ${detected.length} items`);
