@@ -21,37 +21,7 @@
 <body class="bg-slate-50"> 
     <div id="root"></div> 
 
-    <!-- Firebase SDK (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
-
-    <script>
-        const firebaseConfig = window.__firebase_config || {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROYECTO_ID",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "ID_SENDER",
-            appId: window.__app_id || "ID_APP"
-        };
-
-        const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
-
-        if (isConfigValid) {
-            try {
-                firebase.initializeApp(firebaseConfig);
-                window.dispatchEvent(new Event('firebase-ready'));
-            } catch (e) {
-                console.error("Firebase init error", e);
-                window.dispatchEvent(new Event('firebase-error'));
-            }
-        } else {
-            console.warn("Firebase config is missing or invalid.");
-            // Delay a bit to ensure React is listening
-            setTimeout(() => window.dispatchEvent(new Event('firebase-error')), 100);
-        }
-    </script>
+    <!-- Solución Local (Sin dependencias externas de Firebase) -->
 
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -81,116 +51,32 @@
                 return map[cat] || map[name.toLowerCase()] || '📦';
             };
 
-            const [user, setUser] = useState(null);
-            const [products, setProducts] = useState([]);
-            const [loading, setLoading] = useState(true);
+            const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('pantry_products') || '[]'));
+            const [loading, setLoading] = useState(false);
             const [activeTab, setActiveTab] = useState('pantry');
-            const [lang, setLang] = useState('es');
-            const [darkMode, setDarkMode] = useState(false);
-
-            const [configError, setConfigError] = useState(false);
+            const [lang, setLang] = useState(() => localStorage.getItem('pantry_lang') || 'es');
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('pantry_darkMode') === 'true');
 
             useEffect(() => {
-                let unsubscribe = null;
+                localStorage.setItem('pantry_products', JSON.stringify(products));
+            }, [products]);
 
-                const init = () => {
-                    if (typeof firebase === 'undefined') return;
-                    
-                    firebase.auth().onAuthStateChanged((u) => {
-                        setUser(u);
-                        if (u) {
-                            unsubscribe = firebase.firestore().collection('pantry')
-                                .where("userId", "==", u.uid)
-                                .onSnapshot((snapshot) => {
-                                    setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-                                    setLoading(false);
-                                }, (err) => {
-                                    console.error("Firestore error:", err);
-                                    setLoading(false);
-                                });
-                        } else {
-                            setProducts([]);
-                            setLoading(false);
-                        }
-                    });
-                };
+            useEffect(() => {
+                localStorage.setItem('pantry_lang', lang);
+            }, [lang]);
 
-                if (window.firebase && firebase.apps.length > 0) {
-                    init();
-                } else {
-                    window.addEventListener('firebase-ready', init);
-                }
+            useEffect(() => {
+                localStorage.setItem('pantry_darkMode', darkMode);
+            }, [darkMode]);
 
-                window.addEventListener('firebase-error', () => {
-                    setLoading(false);
-                    setConfigError(true);
-                });
-
-                const timeout = setTimeout(() => {
-                    setLoading(currentLoading => {
-                        if (currentLoading) setConfigError(true);
-                        return currentLoading;
-                    });
-                }, 5000);
-
-                return () => {
-                    if (unsubscribe) unsubscribe();
-                    window.removeEventListener('firebase-ready', init);
-                    clearTimeout(timeout);
-                };
-            }, []);
-
-            const handleLogin = async () => {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                try { await firebase.auth().signInWithPopup(provider); } catch (e) { console.error(e); alert("Error login: " + e.message); }
-            };
-
-            const handleLogout = async () => {
-                try { await firebase.auth().signOut(); } catch (e) { console.error(e); }
-            };
+            const user = { displayName: 'Mi Inventario Local', email: 'Modo Offline Activado' };
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
-
-            if (configError) return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col items-center justify-center p-8 bg-slate-50">
-                    <div className="glass p-10 rounded-[3rem] shadow-2xl text-center animate-pop border border-white">
-                        <div className="text-6xl mb-6">⚠️</div>
-                        <h1 className="text-2xl font-extrabold text-slate-800 mb-4">Configuración Requerida</h1>
-                        <p className="text-slate-500 mb-8 text-sm leading-relaxed">
-                            Para usar esta app sin costos de créditos, debes vincular tu propio Firebase.<br/><br/>
-                            Edita el archivo HTML y busca <b>firebaseConfig</b> para añadir tus credenciales.
-                        </p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="w-full bg-emerald-500 text-white p-4 rounded-2xl shadow-lg font-bold"
-                        >
-                            Reintentar
-                        </button>
-                    </div>
-                </div>
-            );
 
             if (loading) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
                     <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                     <div className="text-emerald-600 font-bold animate-pulse text-xl tracking-tight">{t.title} Pro</div>
-                </div>
-            );
-
-            if (!user) return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col items-center justify-center p-8 bg-slate-50">
-                    <div className="glass p-10 rounded-[3rem] shadow-2xl text-center animate-pop border border-white">
-                        <div className="text-6xl mb-6">🛒</div>
-                        <h1 className="text-4xl font-extrabold text-slate-800 mb-2">{t.title}<span className="text-emerald-500">.</span></h1>
-                        <p className="text-slate-500 mb-8 text-lg">{t.loginSub}</p>
-                        <button
-                            onClick={handleLogin}
-                            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 font-bold text-slate-700"
-                        >
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-                            {t.googleBtn}
-                        </button>
-                    </div>
                 </div>
             );
 
@@ -293,10 +179,16 @@
                                     </div>
                                 </div>
                                 <button
-                                    onClick={handleLogout}
+                                    onClick={() => {
+                                        if(confirm('¿Borrar todos los datos locales?')) {
+                                            setProducts([]);
+                                            localStorage.clear();
+                                            window.location.reload();
+                                        }
+                                    }}
                                     className="w-full p-4 bg-red-50 text-red-500 rounded-3xl font-bold transition-all active:scale-95 border border-red-100"
                                 >
-                                    {t.logout}
+                                    Borrar Todo
                                 </button>
                             </div>
                         </div>
@@ -400,25 +292,22 @@
 
             async function updateQty(id, newVal) {
                 if (newVal < 0) return;
-                try {
-                    await firebase.firestore().collection('pantry').doc(id).update({ stock: newVal });
-                } catch (e) { console.error(e); }
+                setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: newVal } : p));
             }
 
             async function addProduct(name, stock, min, category, expiry, photo) {
-                try {
-                    await firebase.firestore().collection('pantry').add({
-                        name,
-                        stock: parseInt(stock) || 1,
-                        min: parseInt(min) || 1,
-                        category: category || 'General',
-                        expiry: expiry || '',
-                        photo: photo || '',
-                        userId: user.uid,
-                        createdAt: new Date().toISOString()
-                    });
-                    setActiveTab('pantry');
-                } catch (e) { console.error(e); alert("Error guardando: " + e.message); }
+                const newProduct = {
+                    id: Date.now().toString(),
+                    name,
+                    stock: parseInt(stock) || 1,
+                    min: parseInt(min) || 1,
+                    category: category || 'General',
+                    expiry: expiry || '',
+                    photo: photo || '',
+                    createdAt: new Date().toISOString()
+                };
+                setProducts(prev => [...prev, newProduct]);
+                setActiveTab('pantry');
             }
         }
 
