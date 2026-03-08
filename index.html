@@ -27,16 +27,16 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos', editTitle: 'Actualizar Compra', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene' },
-            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products', editTitle: 'Update Purchase', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene' },
-            pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Stock Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir produto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpeza', catHygiene: 'Higiene' },
-            it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario intelligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene' },
-            fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène' },
-            de: { title: 'MeineVorratskammer', pantry: 'Vorratskammer', add: 'Hinzufügen', cart: 'Warenkorb', profile: 'Profil', stats: 'Statistik', stock: 'Bestand', loading: 'Starten...', loginSub: 'Ihr intelligentes Inventar.', addProductTitle: 'Produkt hinzufügen', placeholderName: 'z.B. Milch', saveBtn: 'Speichern', logout: 'Abmelden', share: 'Teilen', expiry: 'Ablaufdatum', category: 'Kategorie', search: 'Suche...', empty: 'Keine Produkte', editTitle: 'Kauf aktualisieren', stockActual: 'Aktueller Bestand', minimum: 'Minimum', deleteBtn: 'Löschen', productLabel: 'Produkt', photoUrl: 'Foto URL (Optional)', confirmDelete: 'Produkt löschen?', deleteAll: 'Alles löschen', confirmDeleteAll: 'Alle lokalen Daten löschen?', allClear: '✨ Alles in Ordnung', catGeneral: 'Allgemein', catDairy: 'Milchprodukte', catMeat: 'Fleisch', catProduce: 'Obst/Gemüse', catPantry: 'Vorratskammer', catDrinks: 'Getränke', catCleaning: 'Reinigung', catHygiene: 'Hygiene' },
-            zh: { title: '我的食品室', pantry: '食品室', add: '添加', cart: '购物车', profile: '个人资料', stats: '统计', stock: '库存', loading: '正在启动...', loginSub: '您的智能库存。', addProductTitle: '添加产品', placeholderName: '例如：牛奶', saveBtn: '保存', logout: '登出', share: '分享', expiry: '有效期', category: '类别', search: '搜索...', empty: '没有产品', editTitle: '更新购买', stockActual: '当前库存', minimum: '最低限额', deleteBtn: '删除', productLabel: '产品', photoUrl: '照片网址 (可选)', confirmDelete: '删除产品？', deleteAll: '清除所有', confirmDeleteAll: '删除所有本地数据？', allClear: '✨ 一切正常', catGeneral: '常规', catDairy: '乳制品', catMeat: '肉类', catProduce: '水果/蔬菜', catPantry: '食品室', catDrinks: '饮料', catCleaning: '清洁', catHygiene: '卫生' },
-            ja: { title: 'マイパントリー', pantry: 'パントリー', add: '追加', cart: 'カート', profile: 'プロフィール', stats: '統計', stock: '在庫', loading: '起動中...', loginSub: 'スマートな在庫管理。', addProductTitle: '商品を追加', placeholderName: '例：牛乳', saveBtn: '保存', logout: 'ログアウト', share: '共有', expiry: '賞味期限', category: 'カテゴリー', search: '検索...', empty: '商品がありません', editTitle: '購入情報を更新', stockActual: '現在の在庫', minimum: '最小', deleteBtn: '削除', productLabel: '商品', photoUrl: '写真URL (任意)', confirmDelete: '商品を削除しますか？', deleteAll: 'すべて削除', confirmDeleteAll: 'すべてのローカルデータを削除しますか？', allClear: '✨ 準備完了', catGeneral: '一般', catDairy: '乳製品', catMeat: '肉類', catProduce: '果物・野菜', catPantry: 'パントリー', catDrinks: '飲料', catCleaning: '掃除用品', catHygiene: '衛生用品' },
-            ru: { title: 'МояКладовая', pantry: 'Кладовая', add: 'Добавить', cart: 'Корзина', profile: 'Профиль', stats: 'Статистика', stock: 'Запас', loading: 'Запуск...', loginSub: 'Ваш умный инвентарь.', addProductTitle: 'Добавить продукт', placeholderName: 'Напр. Молоко', saveBtn: 'Сохранить', logout: 'Выйти', share: 'Поделиться', expiry: 'Срок годности', category: 'Категория', search: 'Поиск...', empty: 'Нет продуктов', editTitle: 'Обновить покупку', stockActual: 'Тек. запас', minimum: 'Мин.', deleteBtn: 'Удалить', productLabel: 'Продукт', photoUrl: 'URL фото (Опционально)', confirmDelete: 'Удалить продукт?', deleteAll: 'Очистить всё', confirmDeleteAll: 'Удалить все локальные данные?', allClear: '✨ Всё в порядке', catGeneral: 'Общее', catDairy: 'Молочные продукты', catMeat: 'Мясо', catProduce: 'Фрукты/Овощи', catPantry: 'Кладовая', catDrinks: 'Напитки', catCleaning: 'Чистка', catHygiene: 'Гигиена' },
-            ar: { title: 'خزاناتي', pantry: 'الخزانة', add: 'إضافة', cart: 'العربة', profile: 'الملف الشخصي', stats: 'الإحصائيات', stock: 'المخزون', loading: 'جاري البدء...', loginSub: 'مخزونك الذكي.', addProductTitle: 'إضافة منتج', placeholderName: 'مثال: حليب', saveBtn: 'حفظ', logout: 'تسجيل الخروج', share: 'مشاركة', expiry: 'تاريخ الانتهاء', category: 'فئة', search: 'بحث...', empty: 'لا توجد منتجات', editTitle: 'تحديث الشراء', stockActual: 'المخزون الحالي', minimum: 'الحد الأدنى', deleteBtn: 'حذف', productLabel: 'المنتج', photoUrl: 'رابط الصورة (اختياري)', confirmDelete: 'حذف المنتج؟', deleteAll: 'مسح الكل', confirmDeleteAll: 'مسح جميع البيانات المحلية؟', allClear: '✨ كل شيء على ما يرام', catGeneral: 'عام', catDairy: 'ألبان', catMeat: 'لحوم', catProduce: 'فواكه/خضروات', catPantry: 'الخزانة', catDrinks: 'مشروبات', catCleaning: 'تنظيف', catHygiene: 'نظافة شخصية' }
+            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos', editTitle: 'Actualizar Compra', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo Mínimo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos' },
+            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products', editTitle: 'Update Purchase', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total Value', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Under Minimum', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data' },
+            pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Estoque', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Estoque Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir producto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Preço', location: 'Localização', locFridge: 'Frigorífico', locFreezer: 'Congelador', locPantry: 'Despensa Principal', locOther: 'Outro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdício', consumptionFreq: 'Frequência de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Mais Usados', outOfStock: 'Esgotados', avgLife: 'Vida Útil Média', statStock: 'Gestão de Estoque', statWaste: 'Controle de Desperdício', statFinance: 'Finanças e Gastos', statHabits: 'Uso e Hábitos', days: 'dias', recipes: 'Receitas', recipeCoverage: 'Cobertura de Receitas', underMin: 'Abaixo do Mínimo', priceHistory: 'Histórico de Preços', wasteBtn: 'Marcar como Desperdício', suggestions: 'Sugestões', noData: 'Sem dados' },
+            it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario inteligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene', price: 'Prezzo', location: 'Posizione', locFridge: 'Frigorifero', locFreezer: 'Congelatore', locPantry: 'Dispensa Principale', locOther: 'Altro', totalValue: 'Valore Totale', wasteIndex: 'Indice di Spreco', consumptionFreq: 'Frequenza di Consumo', nextPurchase: 'Prossimo Acquisto', topUsed: 'Più Usati', outOfStock: 'Esauriti', avgLife: 'Vita Media', statStock: 'Gestione Scorte', statWaste: 'Controllo Sprechi', statFinance: 'Finanza e Spese', statHabits: 'Uso e Abitudini', days: 'giorni', recipes: 'Ricette', recipeCoverage: 'Copertura Ricette', underMin: 'Sotto Minimo', priceHistory: 'Cronologia Prezzi', wasteBtn: 'Segna come Spreco', suggestions: 'Suggerimenti', noData: 'Nessun dato' },
+            fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène', price: 'Prix', location: 'Emplacement', locFridge: 'Réfrigérateur', locFreezer: 'Congélateur', locPantry: 'Garde-manger Principal', locOther: 'Autre', totalValue: 'Valeur Totale', wasteIndex: 'Indice de Gaspillage', consumptionFreq: 'Fréquence de Consommation', nextPurchase: 'Prochain Achat', topUsed: 'Plus Utilisés', outOfStock: 'Épuisés', avgLife: 'Durée de Vie Moyenne', statStock: 'Gestion des Stocks', statWaste: 'Contrôle du Gaspillage', statFinance: 'Finances et Dépenses', statHabits: 'Usage et Habitudes', days: 'jours', recipes: 'Recettes', recipeCoverage: 'Couverture des Recettes', underMin: 'Sous le Minimum', priceHistory: 'Historique des Prix', wasteBtn: 'Marquer comme Gaspillage', suggestions: 'Suggestions', noData: 'Pas de données' },
+            de: { title: 'MeineVorratskammer', pantry: 'Vorratskammer', add: 'Hinzufügen', cart: 'Warenkorb', profile: 'Profil', stats: 'Statistik', stock: 'Bestand', loading: 'Starten...', loginSub: 'Ihr intelligentes Inventar.', addProductTitle: 'Produkt hinzufügen', placeholderName: 'z.B. Milch', saveBtn: 'Speichern', logout: 'Abmelden', share: 'Teilen', expiry: 'Ablaufdatum', category: 'Kategorie', search: 'Suche...', empty: 'Keine Produkte', editTitle: 'Kauf aktualisieren', stockActual: 'Aktueller Bestand', minimum: 'Minimum', deleteBtn: 'Löschen', productLabel: 'Produkt', photoUrl: 'Foto URL (Optional)', confirmDelete: 'Produkt löschen?', deleteAll: 'Alles löschen', confirmDeleteAll: 'Alle lokalen Daten löschen?', allClear: '✨ Alles in Ordnung', catGeneral: 'Allgemein', catDairy: 'Milchprodukte', catMeat: 'Fleisch', catProduce: 'Obst/Gemüse', catPantry: 'Vorratskammer', catDrinks: 'Getränke', catCleaning: 'Reinigung', catHygiene: 'Hygiene', price: 'Preis', location: 'Standort', locFridge: 'Kühlschrank', locFreezer: 'Gefrierschrank', locPantry: 'Hauptvorratskammer', locOther: 'Andere', totalValue: 'Gesamtwert', wasteIndex: 'Abfallindex', consumptionFreq: 'Verbrauchshäufigkeit', nextPurchase: 'Nächster Kauf', topUsed: 'Meistgenutzt', outOfStock: 'Ausverkauft', avgLife: 'Durchschn. Lebensdauer', statStock: 'Lagerverwaltung', statWaste: 'Verschwendungskontrolle', statFinance: 'Finanzen & Ausgaben', statHabits: 'Nutzung & Gewohnheiten', days: 'Tage', recipes: 'Rezepte', recipeCoverage: 'Rezeptabdeckung', underMin: 'Unter Minimum', priceHistory: 'Preishistorie', wasteBtn: 'Als Abfall markieren', suggestions: 'Vorschläge', noData: 'Keine Daten' },
+            zh: { title: '我的食品室', pantry: '食品室', add: '添加', cart: '购物车', profile: '个人资料', stats: '统计', stock: '库存', loading: '正在启动...', loginSub: '您的智能库存。', addProductTitle: '添加产品', placeholderName: '例如：牛奶', saveBtn: '保存', logout: '登出', share: '分享', expiry: '有效期', category: '类别', search: '搜索...', empty: '没有产品', editTitle: '更新购买', stockActual: '当前库存', minimum: '最低限额', deleteBtn: '删除', productLabel: '产品', photoUrl: '照片网址 (可选)', confirmDelete: '删除产品？', deleteAll: '清除所有', confirmDeleteAll: '删除所有本地数据？', allClear: '✨ 一切正常', catGeneral: '常规', catDairy: '乳制品', catMeat: '肉类', catProduce: '水果/蔬菜', catPantry: '食品室', catDrinks: '饮料', catCleaning: '清洁', catHygiene: '卫生', price: '价格', location: '位置', locFridge: '冰箱', locFreezer: '冷冻柜', locPantry: '主食品室', locOther: '其他', totalValue: '总价值', wasteIndex: '浪费指数', consumptionFreq: '消耗频率', nextPurchase: '下次购买', topUsed: '最常用', outOfStock: '缺货', avgLife: '平均寿命', statStock: '库存管理', statWaste: '浪费控制', statFinance: '财务与支出', statHabits: '使用习惯', days: '天', recipes: '食谱', recipeCoverage: '食谱覆盖率', underMin: '低于最低额', priceHistory: '价格历史', wasteBtn: '标记为浪费', suggestions: '建议', noData: '无数据' },
+            ja: { title: 'マイパントリー', pantry: 'パントリー', add: '追加', cart: 'カート', profile: 'プロフィール', stats: '統計', stock: '在庫', loading: '起動中...', loginSub: 'スマートな在庫管理。', addProductTitle: '商品を追加', placeholderName: '例：牛乳', saveBtn: '保存', logout: 'ログアウト', share: '共有', expiry: '賞味期限', category: 'カテゴリー', search: '検索...', empty: '商品がありません', editTitle: '購入情報を更新', stockActual: '現在の在庫', minimum: '最小', deleteBtn: '削除', productLabel: '商品', photoUrl: '写真URL (任意)', confirmDelete: '商品を削除しますか？', deleteAll: 'すべて削除', confirmDeleteAll: 'すべてのローカルデータを削除しますか？', allClear: '✨ 準備完了', catGeneral: '一般', catDairy: '乳製品', catMeat: '肉類', catProduce: '果物・野菜', catPantry: 'パントリー', catDrinks: '飲料', catCleaning: '掃除用品', catHygiene: '衛生用品', price: '価格', location: '場所', locFridge: '冷蔵庫', locFreezer: '冷凍庫', locPantry: 'メインパントリー', locOther: 'その他', totalValue: '合計額', wasteIndex: '廃棄指数', consumptionFreq: '使用頻度', nextPurchase: '次回購入', topUsed: 'よく使うもの', outOfStock: '在庫切れ', avgLife: '平均寿命', statStock: '在庫管理', statWaste: '廃棄管理', statFinance: '財務と経費', statHabits: '使用習慣', days: '日', recipes: 'レシピ', recipeCoverage: 'レシピ充足率', underMin: '最小未満', priceHistory: '価格履歴', wasteBtn: '廃棄としてマーク', suggestions: '提案', noData: 'データなし' },
+            ru: { title: 'МояКладовая', pantry: 'Кладовая', add: 'Добавить', cart: 'Корзина', profile: 'Профиль', stats: 'Статистика', stock: 'Запас', loading: 'Запуск...', loginSub: 'Ваш умный инвентарь.', addProductTitle: 'Добавить продукт', placeholderName: 'Напр. Молоко', saveBtn: 'Сохранить', logout: 'Выйти', share: 'Поделиться', expiry: 'Срок годности', category: 'Категория', search: 'Поиск...', empty: 'Нет продуктов', editTitle: 'Обновить покупку', stockActual: 'Тек. запас', minimum: 'Мин.', deleteBtn: 'Уdalить', productLabel: 'Продукт', photoUrl: 'URL фото (Опционально)', confirmDelete: 'Удалить продукт?', deleteAll: 'Очистить всё', confirmDeleteAll: 'Удалить все локальные данные?', allClear: '✨ Всё в порядке', catGeneral: 'Общее', catDairy: 'Молочные продукты', catMeat: 'Мясо', catProduce: 'Фрукты/Овощи', catPantry: 'Кладовая', catDrinks: 'Напитки', catCleaning: 'Чистка', catHygiene: 'Гигиена', price: 'Цена', location: 'Расположение', locFridge: 'Холодильник', locFreezer: 'Морозильник', locPantry: 'Основная кладовая', locOther: 'Другое', totalValue: 'Общая стоимость', wasteIndex: 'Индекс отходов', consumptionFreq: 'Частота потребления', nextPurchase: 'Следующая покупка', topUsed: 'Самые популярные', outOfStock: 'Нет в наличии', avgLife: 'Ср. срок службы', statStock: 'Управление запасами', statWaste: 'Контроль отходов', statFinance: 'Финансы и расходы', statHabits: 'Использование и привычки', days: 'дн.', recipes: 'Рецепты', recipeCoverage: 'Доступность рецептов', underMin: 'Ниже минимума', priceHistory: 'История цен', wasteBtn: 'Отметить как отходы', suggestions: 'Предложения', noData: 'Нет данных' },
+            ar: { title: 'خزاناتي', pantry: 'الخزانة', add: 'إضافة', cart: 'العربة', profile: 'الملف الشخصي', stats: 'الإحصائيات', stock: 'المخزون', loading: 'جاري البدء...', loginSub: 'مخزونك الذكي.', addProductTitle: 'إضافة منتج', placeholderName: 'مثال: حليب', saveBtn: 'حفظ', logout: 'تسجيل الخروج', share: 'مشاركة', expiry: 'تاريخ الانتهاء', category: 'فئة', search: 'بحث...', empty: 'لا توجد منتجات', editTitle: 'تحديث الشراء', stockActual: 'المخزون الحالي', minimum: 'الحد الأدنى', deleteBtn: 'حذف', productLabel: 'المنتج', photoUrl: 'رابط الصورة (اختياري)', confirmDelete: 'حذف المنتج؟', deleteAll: 'مسح الكل', confirmDeleteAll: 'مسح جميع البيانات المحلية؟', allClear: '✨ كل شيء على ما يرام', catGeneral: 'عام', catDairy: 'ألبan', catMeat: 'لحوم', catProduce: 'فواكه/خضروات', catPantry: 'الخزانة', catDrinks: 'مشروبات', catCleaning: 'تنظيف', catHygiene: 'نظافة شخصية', price: 'السعر', location: 'الموقع', locFridge: 'الثلاجة', locFreezer: 'المجمدة', locPantry: 'المخزن الرئيسي', locOther: 'أخرى', totalValue: 'القيمة الإجمالية', wasteIndex: 'مؤشر الهدر', consumptionFreq: 'تكرار الاستهلاك', nextPurchase: 'الشراء القادم', topUsed: 'الأكثر استخداماً', outOfStock: 'نفد من المخزون', avgLife: 'متوسط العمر', statStock: 'إدارة المخزون', statWaste: 'مراقبة الهدر', statFinance: 'المالية والمصاريف', statHabits: 'الاستخدام والعادات', days: 'أيام', recipes: 'وصفات', recipeCoverage: 'تغطية الوصفات', underMin: 'تحت الحد الأدنى', priceHistory: 'تاريخ الأسعار', wasteBtn: 'تمييز كنفايات', suggestions: 'اقتراحات', noData: 'لا توجد بيانات' }
         };
 
         function App() {
@@ -65,7 +65,15 @@
                 return catMap[cat] || cat;
             };
 
+            const getLocationLabel = (loc) => {
+                const locMap = {
+                    'Fridge': t.locFridge, 'Freezer': t.locFreezer, 'Pantry': t.locPantry, 'Other': t.locOther
+                };
+                return locMap[loc] || loc;
+            };
+
             const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('pantry_products') || '[]'));
+            const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('pantry_recipes') || '[{"id":"1","name":"Pasta Básica","ingredients":[{"name":"pasta","qty":1},{"name":"tomate","qty":2}]}]'));
             const [loading, setLoading] = useState(false);
             const [activeTab, setActiveTab] = useState('pantry');
             const [lang, setLang] = useState(() => localStorage.getItem('pantry_lang') || 'es');
@@ -75,6 +83,10 @@
             useEffect(() => {
                 localStorage.setItem('pantry_products', JSON.stringify(products));
             }, [products]);
+
+            useEffect(() => {
+                localStorage.setItem('pantry_recipes', JSON.stringify(recipes));
+            }, [recipes]);
 
             useEffect(() => {
                 localStorage.setItem('pantry_lang', lang);
@@ -87,6 +99,96 @@
             const user = { displayName: 'Mi Inventario Local', email: 'Modo Offline Activado' };
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
+            const stats = (() => {
+                const now = new Date();
+                const totalValue = products.reduce((acc, p) => acc + (p.stock * (p.price || 0)), 0);
+
+                const underMin = products.filter(p => p.stock <= p.min && p.stock > 0);
+                const outOfStock = products.filter(p => p.stock === 0);
+
+                const categoryStats = {};
+                const locationStats = {};
+                let totalWasted = 0;
+                let totalConsumed = 0;
+
+                const avgLifeStats = {};
+
+                products.forEach(p => {
+                    const cat = p.category || 'General';
+                    categoryStats[cat] = (categoryStats[cat] || 0) + (p.stock * (p.price || 0));
+
+                    const loc = p.location || 'Pantry';
+                    locationStats[loc] = (locationStats[loc] || 0) + 1;
+
+                    let pantryLife = 0;
+                    let completions = 0;
+
+                    (p.movementHistory || []).forEach(m => {
+                        if (m.type === 'waste') totalWasted += m.qty;
+                        if (m.type === 'consume') totalConsumed += m.qty;
+
+                        if ((m.type === 'consume' || m.type === 'waste') && p.createdAt) {
+                            const life = (new Date(m.date) - new Date(p.createdAt)) / (1000*60*60*24);
+                            if (life > 0) {
+                                pantryLife += life;
+                                completions++;
+                            }
+                        }
+                    });
+
+                    if (completions > 0) {
+                        if (!avgLifeStats[cat]) avgLifeStats[cat] = { total: 0, count: 0 };
+                        avgLifeStats[cat].total += (pantryLife / completions);
+                        avgLifeStats[cat].count += 1;
+                    }
+                });
+
+                const wasteIndex = totalConsumed + totalWasted > 0
+                    ? (totalWasted / (totalConsumed + totalWasted)) * 100
+                    : 0;
+
+                const categoryAvgLife = Object.entries(avgLifeStats).map(([cat, data]) => ({
+                    cat,
+                    avg: (data.total / data.count).toFixed(1)
+                }));
+
+                const cookableRecipes = (recipes || []).filter(r =>
+                    r && r.ingredients && r.ingredients.every(ing => {
+                        const p = products.find(p => p.name && p.name.toLowerCase() === (ing.name || "").toLowerCase());
+                        return p && p.stock >= (ing.qty || 0);
+                    })
+                ).length;
+                const recipeCoverage = (recipes && recipes.length > 0) ? (cookableRecipes / recipes.length) * 100 : 0;
+
+                const topUsed = [...products].sort((a, b) => {
+                    const aC = (a.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0);
+                    const bC = (b.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0);
+                    return bC - aC;
+                }).slice(0, 5).filter(p => (p.movementHistory || []).some(m => m.type === 'consume'));
+
+                const frequencyData = products.map(p => {
+                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume').sort((a, b) => new Date(a.date) - new Date(b.date));
+                    if (consumes.length < 2) return null;
+                    const diffs = [];
+                    for(let i=1; i<consumes.length; i++) {
+                        diffs.push((new Date(consumes[i].date) - new Date(consumes[i-1].date)) / (1000*60*60*24));
+                    }
+                    const avg = diffs.reduce((a,b) => a+b, 0) / diffs.length;
+                    return { name: p.name, avg: avg.toFixed(1) };
+                }).filter(Boolean);
+
+                const suggestions = products.filter(p => {
+                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume');
+                    if (consumes.length < 2) return p.stock <= p.min;
+                    const last = new Date(consumes[consumes.length-1].date);
+                    const diffDays = (now - last) / (1000*60*60*24);
+                    const frequencyDataForP = frequencyData.find(f => f.name === p.name);
+                    return p.stock <= p.min || (frequencyDataForP && diffDays >= parseFloat(frequencyDataForP.avg));
+                }).slice(0, 3);
+
+                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife };
+            })();
 
             if (loading) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -161,6 +263,12 @@
                                      <input id="pStock" type="number" placeholder={t.stock} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
                                      <input id="pMin" type="number" placeholder="Min" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
                                  </div>
+                                 <div className="flex gap-2">
+                                     <input id="pPrice" type="number" step="0.01" placeholder={t.price} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <select id="pLoc" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
+                                         {['Pantry', 'Fridge', 'Freezer', 'Other'].map(l => <option key={l} value={l}>{getLocationLabel(l)}</option>)}
+                                     </select>
+                                 </div>
                                  <select id="pCat" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
                                      {['General', 'Lácteos', 'Carnes', 'Frutas/Verduras', 'Despensa', 'Bebidas', 'Limpieza', 'Higiene'].map(c => <option key={c} value={c}>{getCategoryLabel(c)}</option>)}
                                  </select>
@@ -173,7 +281,9 @@
                                      const cat = document.getElementById('pCat').value;
                                      const exp = document.getElementById('pExpiry').value;
                                      const photo = document.getElementById('pPhoto').value;
-                                     if(name) addProduct(name, stock, min, cat, exp, photo);
+                                     const price = document.getElementById('pPrice').value;
+                                     const loc = document.getElementById('pLoc').value;
+                                     if(name) addProduct(name, stock, min, cat, exp, photo, price, loc);
                                  }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-2">{t.saveBtn}</button>
                              </div>
                         </div>
@@ -243,39 +353,153 @@
                             </div>
                         </div>
                     ) : activeTab === 'stats' ? (
-                        <div className="animate-pop">
-                            <h2 className="text-2xl font-bold mb-6">{t.stats}</h2>
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.title}</p>
-                                    <p className="text-3xl font-extrabold text-emerald-500">{products.length}</p>
-                                </div>
-                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.cart}</p>
-                                    <p className="text-3xl font-extrabold text-red-500">{products.filter(p => p.stock <= p.min).length}</p>
-                                </div>
-                            </div>
+                        <div className="animate-pop pb-10">
+                            <h2 className="text-3xl font-extrabold mb-8">{t.stats}</h2>
 
-                            <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm mb-6`}>
-                                <h3 className="font-bold mb-4">{t.category}</h3>
-                                <div className="space-y-4">
-                                    {[...new Set(products.map(p => p.category || 'General'))].map(cat => {
-                                        const count = products.filter(p => (p.category || 'General') === cat).length;
-                                        const pct = (count / (products.length || 1)) * 100;
-                                        return (
-                                            <div key={cat}>
-                                                <div className="flex justify-between text-xs font-bold mb-1 uppercase text-slate-500">
-                                                    <span>{getCategoryLabel(cat)}</span>
-                                                    <span>{count}</span>
+                            {/* Stock & Reposición */}
+                            <section className="mb-8">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">📦 {t.statStock}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.underMin}</p>
+                                        <div className="space-y-2">
+                                            {stats.underMin.length === 0 ? <p className="text-slate-400 text-sm">--</p> : stats.underMin.map(p => (
+                                                <div key={p.id} className="flex justify-between items-center text-sm">
+                                                    <span>{p.name}</span>
+                                                    <span className="font-bold text-orange-500">{p.stock} / {p.min}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${pct}%` }}></div>
-                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.outOfStock}</p>
+                                        <p className="text-4xl font-black text-red-500">{stats.outOfStock.length}</p>
+                                        <div className="mt-2 text-xs text-slate-400">
+                                            {stats.outOfStock.map(p => p.name).join(', ') || '--'}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent col-span-full`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.consumptionFreq} / {t.nextPurchase}</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                {stats.frequencyData.map(f => (
+                                                    <div key={f.name} className="text-xs flex justify-between">
+                                                        <span>{f.name}</span>
+                                                        <span className="text-emerald-500 font-bold">{f.avg} {t.days}</span>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        );
-                                    })}
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800">
+                                                <p className="text-[10px] font-bold text-emerald-600 uppercase mb-2">💡 {t.suggestions || 'Suggestion'}</p>
+                                                {stats.suggestions.map(s => <p key={s.id} className="text-sm font-bold">🛒 {s.name}</p>)}
+                                                {stats.suggestions.length === 0 && <p className="text-xs text-slate-400">{t.noData || 'No data'}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </section>
+
+                            {/* Control de Desperdicio */}
+                            <section className="mb-8">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">🍎 {t.statWaste}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.wasteIndex}</p>
+                                        <div className="flex items-end gap-2">
+                                            <p className="text-4xl font-black text-orange-500">{stats.wasteIndex.toFixed(1)}%</p>
+                                            <p className="text-[10px] text-slate-400 mb-1">({t.expiry})</p>
+                                        </div>
+                                        <div className="mt-4 h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                            <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${stats.wasteIndex}%` }}></div>
+                                        </div>
+                                        <div className="mt-4 space-y-1">
+                                            {products.filter(p => p.expiry && new Date(p.expiry) < new Date(Date.now() + 3*24*60*60*1000)).slice(0, 3).map(p => (
+                                                <div key={p.id} className="text-[10px] flex justify-between">
+                                                    <span className="truncate max-w-[100px]">{p.name}</span>
+                                                    <span className={new Date(p.expiry) < new Date() ? 'text-red-500' : 'text-orange-500'}>{new Date(p.expiry).toLocaleDateString(lang, {month:'short', day:'numeric'})}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.avgLife} ({t.category})</p>
+                                        <div className="space-y-3">
+                                            {stats.categoryAvgLife.length === 0 ? (
+                                                ['Lácteos', 'Carnes', 'Frutas/Verduras'].map(cat => (
+                                                    <div key={cat} className="flex justify-between items-center text-xs font-bold">
+                                                        <span className="text-slate-400 uppercase">{getCategoryLabel(cat)}</span>
+                                                        <span className="opacity-50">-- {t.days}</span>
+                                                    </div>
+                                                ))
+                                            ) : stats.categoryAvgLife.map(item => (
+                                                <div key={item.cat} className="flex justify-between items-center text-xs font-bold">
+                                                    <span className="text-slate-400 uppercase">{getCategoryLabel(item.cat)}</span>
+                                                    <span>{item.avg} {t.days}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Finanzas y Gastos */}
+                            <section className="mb-8">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">💰 {t.statFinance}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.totalValue}</p>
+                                        <p className="text-4xl font-black text-emerald-600">${stats.totalValue.toFixed(2)}</p>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.category}</p>
+                                        <div className="space-y-4">
+                                            {Object.entries(stats.categoryStats).map(([cat, val]) => (
+                                                <div key={cat}>
+                                                    <div className="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-500">
+                                                        <span>{getCategoryLabel(cat)}</span>
+                                                        <span>${val.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${(val / (stats.totalValue || 1)) * 100}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Uso y Hábitos */}
+                            <section className="mb-8">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">📊 {t.statHabits}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.topUsed}</p>
+                                        <div className="space-y-2">
+                                            {stats.topUsed.length === 0 ? <p className="text-slate-400 text-sm">--</p> : stats.topUsed.map(p => (
+                                                <div key={p.id} className="flex justify-between items-center text-sm">
+                                                    <span>{p.name}</span>
+                                                    <span className="font-bold text-emerald-500">
+                                                        {(p.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
+                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.recipeCoverage}</p>
+                                        <p className="text-4xl font-black text-blue-500">{stats.recipeCoverage.toFixed(0)}%</p>
+                                        <div className="mt-4 flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+                                            {Object.entries(stats.locationStats).map(([loc, count]) => (
+                                                <div key={loc} className="flex-1 text-center min-w-[60px]">
+                                                    <div className="text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">{getLocationLabel(loc)}</div>
+                                                    <div className="text-lg font-bold">{count}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     ) : (
                         <div className="animate-pop text-center py-20 text-slate-400 font-bold">
@@ -319,6 +543,41 @@
                                             />
                                         </div>
                                     </div>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.price}</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editingProduct.price || ''}
+                                                onChange={(e) => setEditingProduct({...editingProduct, price: parseFloat(e.target.value) || 0})}
+                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.location}</label>
+                                            <select
+                                                value={editingProduct.location || 'Pantry'}
+                                                onChange={(e) => setEditingProduct({...editingProduct, location: e.target.value})}
+                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
+                                            >
+                                                {['Pantry', 'Fridge', 'Freezer', 'Other'].map(l => <option key={l} value={l}>{getLocationLabel(l)}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                {editingProduct.priceHistory && editingProduct.priceHistory.length > 1 && (
+                                    <div className="mt-2">
+                                        <p className="text-[10px] font-bold uppercase text-slate-400 ml-2 mb-1">{t.priceHistory}</p>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                            {editingProduct.priceHistory.slice(-5).reverse().map((ph, idx) => (
+                                                <div key={idx} className="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl text-center min-w-[70px] border border-slate-100 dark:border-slate-600">
+                                                    <div className="text-[9px] text-slate-400">{new Date(ph.date).toLocaleDateString(lang, {month:'short', day:'numeric'})}</div>
+                                                    <div className="text-xs font-bold text-emerald-600">${ph.price}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                     <button
                                         onClick={() => {
                                             updateProduct(editingProduct);
@@ -327,6 +586,15 @@
                                         className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-4"
                                     >
                                         {t.saveBtn}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            markAsWaste(editingProduct.id);
+                                            setEditingProduct(null);
+                                        }}
+                                        className="w-full p-4 bg-orange-100 text-orange-600 rounded-2xl font-bold transition-all active:scale-95 mt-2"
+                                    >
+                                        🗑️ {t.wasteBtn}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -368,14 +636,67 @@
 
             async function updateQty(id, newVal) {
                 if (newVal < 0) return;
-                setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: newVal } : p));
+                setProducts(prev => prev.map(p => {
+                    if (p.id === id) {
+                        const diff = newVal - p.stock;
+                        const movement = {
+                            qty: Math.abs(diff),
+                            type: diff > 0 ? 'add' : 'consume',
+                            date: new Date().toISOString()
+                        };
+                        return {
+                            ...p,
+                            stock: newVal,
+                            movementHistory: [...(p.movementHistory || []), movement]
+                        };
+                    }
+                    return p;
+                }));
+            }
+
+            async function markAsWaste(id) {
+                setProducts(prev => prev.map(p => {
+                    if (p.id === id) {
+                        const movement = {
+                            qty: p.stock,
+                            type: 'waste',
+                            date: new Date().toISOString()
+                        };
+                        return {
+                            ...p,
+                            stock: 0,
+                            movementHistory: [...(p.movementHistory || []), movement]
+                        };
+                    }
+                    return p;
+                }));
             }
 
             async function updateProduct(updated) {
-                setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+                setProducts(prev => prev.map(p => {
+                    if (p.id === updated.id) {
+                        let newPriceHistory = p.priceHistory || [];
+                        if (updated.price !== p.price) {
+                            newPriceHistory = [...newPriceHistory, { price: updated.price, date: new Date().toISOString() }];
+                        }
+
+                        let newMovementHistory = p.movementHistory || [];
+                        if (updated.stock !== p.stock) {
+                            const diff = updated.stock - p.stock;
+                            newMovementHistory = [...newMovementHistory, {
+                                qty: Math.abs(diff),
+                                type: diff > 0 ? 'add' : 'consume',
+                                date: new Date().toISOString()
+                            }];
+                        }
+
+                        return { ...updated, priceHistory: newPriceHistory, movementHistory: newMovementHistory };
+                    }
+                    return p;
+                }));
             }
 
-            async function addProduct(name, stock, min, category, expiry, photo) {
+            async function addProduct(name, stock, min, category, expiry, photo, price, location) {
                 const newProduct = {
                     id: Date.now().toString(),
                     name,
@@ -384,6 +705,10 @@
                     category: category || 'General',
                     expiry: expiry || '',
                     photo: photo || '',
+                    price: parseFloat(price) || 0,
+                    location: location || 'Pantry',
+                    priceHistory: price ? [{ price: parseFloat(price), date: new Date().toISOString() }] : [],
+                    movementHistory: [{ type: 'initial', qty: parseInt(stock) || 1, date: new Date().toISOString() }],
                     createdAt: new Date().toISOString()
                 };
                 setProducts(prev => [...prev, newProduct]);
