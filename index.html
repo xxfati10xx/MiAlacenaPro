@@ -86,6 +86,7 @@
             const [qrData, setQrData] = useState('');
             const [isScanning, setIsScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
+            const [lastCommand, setLastCommand] = useState('');
 
             useEffect(() => {
                 localStorage.setItem('pantry_products', JSON.stringify(products));
@@ -839,9 +840,10 @@
                 }
             }
 
-            function speak(text) {
+            function speak(text, onEnd) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = lang;
+                if (onEnd) utterance.onend = onEnd;
                 window.speechSynthesis.speak(utterance);
             }
 
@@ -866,20 +868,43 @@
 
             function startVoiceAssistant(customMsg = null) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRecognition) return;
+                if (!SpeechRecognition) {
+                    alert("Speech Recognition not supported in this browser.");
+                    return;
+                }
 
                 const recognition = new SpeechRecognition();
-                recognition.lang = lang;
-                recognition.onstart = () => setIsListening(true);
+                recognition.lang = lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : lang === 'en' ? 'en-US' : 'es-ES';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = () => {
+                    setIsListening(true);
+                    setLastCommand('...');
+                };
+
                 recognition.onend = () => setIsListening(false);
+
+                recognition.onerror = (event) => {
+                    console.error("Speech Error:", event.error);
+                    setIsListening(false);
+                    setLastCommand('Error: ' + event.error);
+                };
 
                 recognition.onresult = (event) => {
                     const transcript = event.results[0][0].transcript.toLowerCase();
+                    setLastCommand(transcript);
                     handleVoiceCommand(transcript);
+                    setTimeout(() => setLastCommand(''), 5000);
                 };
 
-                if (customMsg) speak(customMsg);
-                recognition.start();
+                if (customMsg) {
+                    speak(customMsg, () => {
+                        try { recognition.start(); } catch(e) {}
+                    });
+                } else {
+                    try { recognition.start(); } catch(e) {}
+                }
             }
 
             function handleVoiceCommand(cmd) {
