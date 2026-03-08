@@ -163,6 +163,7 @@
             const [isTicketScanning, setIsTicketScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
             const [isFormFillMode, setIsFormFillMode] = useState(false);
+            const [formStep, setFormStep] = useState(null);
             const [lastCommand, setLastCommand] = useState('');
             const [searchQuery, setSearchQuery] = useState('');
 
@@ -192,7 +193,7 @@
                 localStorage.setItem('pantry_budget', budget);
             }, [budget]);
 
-            const stats = (() => {
+            const stats = React.useMemo(() => {
                 const now = new Date();
                 const predictions = {};
 
@@ -364,7 +365,7 @@
                 }).filter(l => l.cost > 0 || l.moves > 5).sort((a, b) => b.cost - a.cost);
 
                 return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions, clusters, macros, healthAlerts, leaks };
-            })();
+            }, [products, lang, budget]);
 
             if (loading) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -1342,7 +1343,7 @@
                 recognition.onresult = (event) => {
                     const transcript = event.results[0][0].transcript.toLowerCase();
                     setLastCommand(transcript);
-                    handleVoiceCommand(transcript, isFormFillMode);
+                    handleVoiceCommand(transcript, fillForm || isFormFillMode);
                     setTimeout(() => setLastCommand(''), 5000);
                 };
 
@@ -1360,43 +1361,58 @@
                 const words = cmd.split(' ');
 
                 if (fillForm) {
-                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))) || 1;
-                    const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
-                    const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
+                    if (formStep === null) {
+                        const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))) || 1;
+                        const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
+                        const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
 
-                    const unitMap = {
-                        'litros': 'litros', 'liters': 'liters',
-                        'kilos': 'kilos', 'kilo': 'kilos', 'kg': 'kilos',
-                        'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
-                        'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
-                    };
+                        const unitMap = {
+                            'litros': 'litros', 'liters': 'liters',
+                            'kilos': 'kilos', 'kilo': 'kilos', 'kg': 'kilos',
+                            'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
+                            'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
+                        };
 
-                    let foundUnit = 'unid';
-                    words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
+                        let foundUnit = 'unid';
+                        words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
 
-                    const pName = words.slice(startIdx > 0 ? startIdx : 0, endIdx > -1 ? endIdx : words.length)
-                        .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))
-                        .join(' ').trim();
+                        const noise = ['añadir', 'agregar', 'add', 'de', 'packs', 'paquetes', 'unidades', 'units'];
+                        const pName = words.slice(startIdx > 0 ? startIdx : 0, endIdx > -1 ? endIdx : words.length)
+                            .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w) && !noise.includes(w))
+                            .join(' ').trim();
 
-                    let expiry = '';
-                    if (endIdx > -1) {
-                        expiry = parseMonth(words[words.length - 1]) || '';
-                    }
+                        if (pName) {
+                            const nameEl = document.getElementById('pName');
+                            const stockEl = document.getElementById('pStock');
+                            const unitEl = document.getElementById('pUnit');
 
-                    if (pName) {
-                        const nameEl = document.getElementById('pName');
-                        const stockEl = document.getElementById('pStock');
+                            if (nameEl) nameEl.value = pName.charAt(0).toUpperCase() + pName.slice(1);
+                            if (stockEl) stockEl.value = qty;
+                            if (unitEl) unitEl.value = foundUnit;
+
+                            setFormStep('min');
+                            const msg = lang === 'es' ? `¿Cuál es el stock mínimo para ${pName}?` : `What is the minimum stock for ${pName}?`;
+                            setTimeout(() => startVoiceAssistant(msg, true), 1000);
+                        }
+                    } else if (formStep === 'min') {
+                        const minQty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w)));
+                        const minEl = document.getElementById('pMin');
+                        if (minEl) minEl.value = minQty;
+
+                        setFormStep('expiry');
+                        const msg = lang === 'es' ? "¿Tiene fecha de vencimiento?" : "Does it have an expiry date?";
+                        setTimeout(() => startVoiceAssistant(msg, true), 1000);
+                    } else if (formStep === 'expiry') {
                         const expEl = document.getElementById('pExpiry');
-                        const unitEl = document.getElementById('pUnit');
+                        if (!cmd.includes('no')) {
+                            const expiry = parseMonth(words[words.length - 1]) || '';
+                            if (expEl) expEl.value = expiry;
+                        }
 
-                        if (nameEl) nameEl.value = pName.charAt(0).toUpperCase() + pName.slice(1);
-                        if (stockEl) stockEl.value = qty;
-                        if (expEl) expEl.value = expiry;
-                        if (unitEl) unitEl.value = foundUnit;
-
-                        speak(lang === 'es' ? `Rellenado: ${pName}` : `Filled: ${pName}`);
+                        setFormStep(null);
+                        setIsFormFillMode(false);
+                        speak(lang === 'es' ? "¡Formulario listo para guardar!" : "Form ready to save!");
                     }
-                    setIsFormFillMode(false);
                     return;
                 }
 
@@ -1499,11 +1515,19 @@
                     return;
                 }
 
-                if (cmd.includes('cuántos') || cmd.includes('consulta') || cmd.includes('información') || cmd.includes('how many') || cmd.includes('info')) {
+                if (cmd.includes('cuántos') || cmd.includes('quedan') || cmd.includes('tengo') || cmd.includes('consulta') || cmd.includes('información') || cmd.includes('how many') || cmd.includes('left') || cmd.includes('have') || cmd.includes('info')) {
                     if (product) {
-                        speak(lang === 'es' ? `Tienes ${product.stock} ${product.unit} de ${product.name}.` : `You have ${product.stock} ${product.unit} of ${product.name}.`);
+                        const unitLabel = product.unit === 'unid' ? (lang === 'es' ? 'unidades' : 'units') : product.unit;
+                        speak(lang === 'es' ? `Tienes ${product.stock} ${unitLabel} de ${product.name}.` : `You have ${product.stock} ${unitLabel} of ${product.name}.`);
                     } else {
-                        speak(lang === 'es' ? "No encontré información sobre ese producto." : "I couldn't find info about that product.");
+                        // Intentar buscar por coincidencia parcial si no se encontró producto exacto
+                        const partial = products.find(p => p.name.toLowerCase().split(' ').some(w => cmd.includes(w)));
+                        if (partial) {
+                            const unitLabel = partial.unit === 'unid' ? (lang === 'es' ? 'unidades' : 'units') : partial.unit;
+                            speak(lang === 'es' ? `Creo que te refieres a ${partial.name}. Tienes ${partial.stock} ${unitLabel}.` : `I think you mean ${partial.name}. You have ${partial.stock} ${unitLabel}.`);
+                        } else {
+                            speak(lang === 'es' ? "No encontré información sobre ese producto." : "I couldn't find info about that product.");
+                        }
                     }
                     return;
                 }
