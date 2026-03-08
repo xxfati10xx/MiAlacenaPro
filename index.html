@@ -178,7 +178,11 @@
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
 
-            const [budget, setBudget] = useState(100);
+            const [budget, setBudget] = useState(() => parseFloat(localStorage.getItem('pantry_budget')) || 100);
+
+            useEffect(() => {
+                localStorage.setItem('pantry_budget', budget);
+            }, [budget]);
 
             const stats = (() => {
                 const now = new Date();
@@ -1328,15 +1332,25 @@
 
                 // 1. Auditoría Interactiva (Continuación)
                 if (auditQueue.length > 0) {
-                    const qty = parseNumber(cmd.split(' ').find(w => !isNaN(parseInt(w)) || ['uno','una','dos','tres'].includes(w)));
+                    const words = cmd.split(' ');
+                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','una','dos','tres','one','only'].includes(w)));
                     const p = auditQueue[0];
                     updateQty(p.id, qty);
+
+                    let feedback = lang === 'es' ? `Entendido, bajando stock de ${p.name} a ${qty}` : `Got it, setting ${p.name} stock to ${qty}`;
+                    if (qty <= p.min) {
+                        feedback += lang === 'es' ? " y agregando a la lista de compras." : " and adding to the shopping list.";
+                    }
+
                     const nextQueue = auditQueue.slice(1);
                     setAuditQueue(nextQueue);
+
                     if (nextQueue.length > 0) {
-                        setTimeout(() => startVoiceAssistant(`${lang === 'es' ? 'Entendido. ¿Y cuántos quedan de' : 'Got it. And how many left of'} ${nextQueue[0].name}?`), 1500);
+                        speak(feedback, () => {
+                            setTimeout(() => startVoiceAssistant(`${lang === 'es' ? '¿Y cuántos quedan de' : 'And how many left of'} ${nextQueue[0].name}?`), 500);
+                        });
                     } else {
-                        speak(lang === 'es' ? "Auditoría completada." : "Audit complete.");
+                        speak(feedback + (lang === 'es' ? ". Auditoría completada." : ". Audit complete."));
                     }
                     return;
                 }
@@ -1355,7 +1369,7 @@
                     const nextStep = cookingStep + 1;
                     if (nextStep < (activeRecipe.instructions || []).length) {
                         setCookingStep(nextStep);
-                        speak(activeRecipe.instructions[nextStep]);
+                        speak(`${lang === 'es' ? 'Paso' : 'Step'} ${nextStep + 1}: ${activeRecipe.instructions[nextStep]}`);
                     } else {
                         speak(lang === 'es' ? "Receta terminada. ¡Buen provecho!" : "Recipe finished. Enjoy!");
                         setActiveRecipe(null);
@@ -1365,15 +1379,18 @@
                 }
 
                 // 3. Conversor de Unidades
-                if (cmd.includes('onzas') || cmd.includes('ounces') || cmd.includes('gramos') || cmd.includes('grams')) {
+                if (cmd.includes('onzas') || cmd.includes('ounces') || cmd.includes('gramos') || cmd.includes('grams') || cmd.includes('kilos') || cmd.includes('libras') || cmd.includes('pounds')) {
                     const num = parseFloat(cmd.match(/\d+/));
                     if (num) {
                         if (cmd.includes('onza') || cmd.includes('ounce')) {
                             const res = Math.round(num * 28.35);
-                            speak(`${num} ${lang === 'es' ? 'onzas son aproximadamente' : 'ounces are about'} ${res} ${lang === 'es' ? 'gramos' : 'grams'}`);
-                        } else {
+                            speak(`${num} ${lang === 'es' ? 'onzas son' : 'ounces are'} ${res} ${lang === 'es' ? 'gramos' : 'grams'}`);
+                        } else if (cmd.includes('libra') || cmd.includes('pound')) {
+                            const res = (num * 0.453).toFixed(2);
+                            speak(`${num} ${lang === 'es' ? 'libras son' : 'pounds are'} ${res} ${lang === 'es' ? 'kilos' : 'kilos'}`);
+                        } else if (cmd.includes('gramo') || cmd.includes('gram')) {
                             const res = (num / 28.35).toFixed(1);
-                            speak(`${num} ${lang === 'es' ? 'gramos son aproximadamente' : 'grams are about'} ${res} ${lang === 'es' ? 'onzas' : 'ounces'}`);
+                            speak(`${num} ${lang === 'es' ? 'gramos son' : 'grams are'} ${res} ${lang === 'es' ? 'onzas' : 'ounces'}`);
                         }
                         return;
                     }
@@ -1382,11 +1399,10 @@
                 // 4. Entrada Rápida: "Añadir [n] [prod] vence en [mes]"
                 if (cmd.includes('añadir') || cmd.includes('agregar') || cmd.includes('add')) {
                     const words = cmd.split(' ');
-                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','tres','four','five'].includes(w)));
-                    // Extract product: everything between 'añadir' and 'vence/expires'
+                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','four','five'].includes(w)));
                     const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
                     const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
-                    const pName = words.slice(startIdx, endIdx > -1 ? endIdx : words.length).join(' ').replace(/litros|kilos|paquetes|liters|kilos/g, '').trim();
+                    const pName = words.slice(startIdx, endIdx > -1 ? endIdx : words.length).join(' ').replace(/litros|kilos|paquetes|unidades|liters|kilos|units|packages/g, '').trim();
 
                     let expiry = '';
                     if (endIdx > -1) {
@@ -1395,29 +1411,47 @@
 
                     if (pName) {
                         addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry', 'unid');
-                        speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${pName}`);
+                        speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${pName}` + (expiry ? ` ${lang === 'es' ? 'que vence en' : 'expiring in'} ${words[words.length-1]}` : ''));
                         return;
                     }
                 }
 
-                // 5. Resumen Matutino / Alerta
+                // 5. Resumen Coach (Resumen Matutino)
                 if (cmd.includes('resumen') || cmd.includes('summary') || cmd.includes('hola') || cmd.includes('hello')) {
                     const expiring = products.filter(p => p.expiry && new Date(p.expiry) <= new Date());
                     const low = products.filter(p => p.stock <= p.min);
-                    let msg = lang === 'es' ? "Hola. " : "Hello. ";
-                    if (expiring.length > 0) msg += `${lang === 'es' ? 'Tienes productos vencidos:' : 'You have expired items:'} ${expiring.map(e => e.name).join(', ')}. `;
-                    if (low.length > 0) msg += `${lang === 'es' ? 'Y te queda poco de:' : 'And you are low on:'} ${low.map(l => l.name).join(', ')}. `;
-                    if (expiring.length === 0 && low.length === 0) msg += lang === 'es' ? "Todo está en orden hoy." : "Everything is in order today.";
+
+                    let msg = lang === 'es' ? `Hola ${profileName}. ` : `Hello ${profileName}. `;
+
+                    if (expiring.length > 0) msg += `${lang === 'es' ? 'Atención: vencen hoy' : 'Warning: expiring today'} ${expiring.map(e => e.name).join(', ')}. `;
+                    if (low.length > 0) msg += `${lang === 'es' ? 'Te queda poco de' : 'You are low on'} ${low.map(l => l.name).join(', ')}. `;
+
+                    // Add Health Coach snippet
+                    if (stats.healthAlerts.length > 0) {
+                        msg += `${lang === 'es' ? 'Como tu coach, noto que' : 'As your coach, I notice'} ${stats.healthAlerts[0]}. `;
+                    }
+
+                    // Add Money Leak snippet
+                    if (stats.leaks.length > 0 && stats.leaks[0].cost > 10) {
+                        msg += `${lang === 'es' ? 'Ojo al gasto,' : 'Regarding your budget,'} ${t.leakAlert.replace('este producto', stats.leaks[0].name)}. `;
+                    }
+
+                    if (expiring.length === 0 && low.length === 0 && stats.healthAlerts.length === 0) {
+                        msg += lang === 'es' ? "Tu alacena se ve perfecta hoy." : "Your pantry looks perfect today.";
+                    }
+
                     speak(msg);
                     return;
                 }
 
                 // 6. Auditoría: "Chequeo" o "Check"
                 if (cmd.includes('chequeo') || cmd.includes('auditoría') || cmd.includes('audit') || cmd.includes('check')) {
-                    const toAudit = products.slice(0, 3); // Audit first 3 for demo
+                    const toAudit = products.filter(p => p.stock > 0).slice(0, 5);
                     if (toAudit.length > 0) {
                         setAuditQueue(toAudit);
                         startVoiceAssistant(`${lang === 'es' ? 'Iniciando chequeo. ¿Cuántos quedan de' : 'Starting audit. How many left of'} ${toAudit[0].name}?`);
+                    } else {
+                        speak(lang === 'es' ? "No hay productos para auditar." : "No products to audit.");
                     }
                     return;
                 }
