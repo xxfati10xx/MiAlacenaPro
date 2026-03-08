@@ -1,1712 +1,299 @@
-<!DOCTYPE html> 
-<html lang="es"> 
-<head> 
-    <meta charset="UTF-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>MiAlacena Pro</title> 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MiAlacena Pro | Smart Inventory</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#059669">
-    <script src="https://cdn.tailwindcss.com"></script> 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script> 
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script> 
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
+    <meta name="theme-color" content="#10b981">
+
+    <!-- Scripts & Styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <style> 
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        :root { --primary: #19e66f; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; color: #1e293b; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); } 
-        .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2); } 
-        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 24px; }
-        .bg-primary { background-color: var(--primary); }
-        .text-primary { color: var(--primary); }
-        .border-primary { border-color: var(--primary); }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        input::placeholder { color: #94a3b8; font-weight: 500; }
-    </style> 
-</head> 
-<body class="bg-slate-50"> 
-    <div id="root"></div> 
 
-    <!-- Solución Local (Sin dependencias externas de Firebase) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+
+    <style>
+        :root { --brand: #10b981; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4); }
+        .dark .glass { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .chart-container { position: relative; margin: auto; height: 160px; width: 160px; }
+    </style>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { brand: '#10b981', secondary: '#3b82f6', danger: '#ef4444', surface: '#f8fafc' },
+                    borderRadius: { '4xl': '2rem' }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-500">
+    <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo, useRef, Fragment } = React;
+
+        const CATEGORIES = [
+            { id: 'General', icon: 'Package', color: 'text-slate-500', bg: 'bg-slate-100' },
+            { id: 'Lácteos', icon: 'Milk', color: 'text-blue-500', bg: 'bg-blue-50' },
+            { id: 'Carnes', icon: 'Beef', color: 'text-red-500', bg: 'bg-red-50' },
+            { id: 'Frutas', icon: 'Apple', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+            { id: 'Despensa', icon: 'Store', color: 'text-orange-500', bg: 'bg-orange-50' },
+            { id: 'Bebidas', icon: 'GlassWater', color: 'text-indigo-500', bg: 'bg-indigo-50' }
+        ];
 
         const TRANSLATIONS = {
-            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Vence', category: 'Categoría', search: 'Buscar en mi alacena...', empty: 'No hay productos', editTitle: 'Detalle de Producto', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...', seeAll: 'Ver Todo', greeting: '¡Buenos días!', hello: 'Hola', soon: 'pronto', alert: 'alerta', statHealth: 'Salud de Despensa', statLeaks: 'Fugas de Dinero', healthCoach: 'Coach de Salud', moneyAdvice: 'Consejo Financiero', proteins: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', fiber: 'Fibra', balanced: 'Balanceada', unbalanced: 'Desbalanceada', fiberAlert: 'Falta fibra y proteína verde', processingAlert: 'Exceso de ultraprocesados', leakAlert: 'Has tirado mucho de este producto. Intenta comprar menos o congelarlo.' },
-            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Settings', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Exp.', category: 'Category', search: 'Search in my pantry...', empty: 'No products', editTitle: 'Product Detail', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Low', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...', seeAll: 'See All', greeting: 'Good morning!', hello: 'Hello', soon: 'soon', alert: 'alert', statHealth: 'Pantry Health', statLeaks: 'Money Leaks', healthCoach: 'Health Coach', moneyAdvice: 'Money Advice', proteins: 'Proteins', carbs: 'Carbs', fats: 'Fats', fiber: 'Fiber', balanced: 'Balanced', unbalanced: 'Unbalanced', fiberAlert: 'Fiber and green protein missing', processingAlert: 'Too many processed foods', leakAlert: 'You have wasted a lot of this product. Try buying less or freezing it.' },
-            pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Estoque', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Estoque Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir producto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Preço', location: 'Localização', locFridge: 'Frigorífico', locFreezer: 'Congelador', locPantry: 'Despensa Principal', locOther: 'Outro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdício', consumptionFreq: 'Frequência de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Mais Usados', outOfStock: 'Esgotados', avgLife: 'Vida Útil Média', statStock: 'Gestão de Estoque', statWaste: 'Controle de Desperdício', statFinance: 'Finanças e Gastos', statHabits: 'Uso e Hábitos', days: 'dias', recipes: 'Receitas', recipeCoverage: 'Cobertura de Receitas', underMin: 'Abaixo do Mínimo', priceHistory: 'Histórico de Preços', wasteBtn: 'Marcar como Desperdício', suggestions: 'Sugestões', noData: 'Sem dados' },
-            it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario inteligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene', price: 'Prezzo', location: 'Posizione', locFridge: 'Frigorifero', locFreezer: 'Congelatore', locPantry: 'Dispensa Principale', locOther: 'Altro', totalValue: 'Valore Totale', wasteIndex: 'Indice di Spreco', consumptionFreq: 'Frequenza di Consumo', nextPurchase: 'Prossimo Acquisto', topUsed: 'Più Usati', outOfStock: 'Esauriti', avgLife: 'Vita Media', statStock: 'Gestione Scorte', statWaste: 'Controllo Sprechi', statFinance: 'Finanza e Spese', statHabits: 'Uso e Abitudini', days: 'giorni', recipes: 'Ricette', recipeCoverage: 'Copertura Ricette', underMin: 'Sotto Minimo', priceHistory: 'Cronologia Prezzi', wasteBtn: 'Segna come Spreco', suggestions: 'Suggerimenti', noData: 'Nessun dato' },
-            fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène', price: 'Prix', location: 'Emplacement', locFridge: 'Réfrigérateur', locFreezer: 'Congélateur', locPantry: 'Garde-manger Principal', locOther: 'Autre', totalValue: 'Valeur Totale', wasteIndex: 'Indice de Gaspillage', consumptionFreq: 'Fréquence de Consommation', nextPurchase: 'Prochain Achat', topUsed: 'Plus Utilisés', outOfStock: 'Épuisés', avgLife: 'Durée de Vie Moyenne', statStock: 'Gestion des Stocks', statWaste: 'Contrôle du Gaspillage', statFinance: 'Finances et Dépenses', statHabits: 'Usage et Habitudes', days: 'jours', recipes: 'Recettes', recipeCoverage: 'Couverture des Recettes', underMin: 'Sous le Minimum', priceHistory: 'Historique des Prix', wasteBtn: 'Marquer comme Gaspillage', suggestions: 'Suggestions', noData: 'Pas de données' },
-            de: { title: 'MeineVorratskammer', pantry: 'Vorratskammer', add: 'Hinzufügen', cart: 'Warenkorb', profile: 'Profil', stats: 'Statistik', stock: 'Bestand', loading: 'Starten...', loginSub: 'Ihr intelligentes Inventar.', addProductTitle: 'Produkt hinzufügen', placeholderName: 'z.B. Milch', saveBtn: 'Speichern', logout: 'Abmelden', share: 'Teilen', expiry: 'Ablaufdatum', category: 'Kategorie', search: 'Suche...', empty: 'Keine Produkte', editTitle: 'Kauf aktualisieren', stockActual: 'Aktueller Bestand', minimum: 'Minimum', deleteBtn: 'Löschen', productLabel: 'Produkt', photoUrl: 'Foto URL (Optional)', confirmDelete: 'Produkt löschen?', deleteAll: 'Alles löschen', confirmDeleteAll: 'Alle lokalen Daten löschen?', allClear: '✨ Alles in Ordnung', catGeneral: 'Allgemein', catDairy: 'Milchprodukte', catMeat: 'Fleisch', catProduce: 'Obst/Gemüse', catPantry: 'Vorratskammer', catDrinks: 'Getränke', catCleaning: 'Reinigung', catHygiene: 'Hygiene', price: 'Preis', location: 'Standort', locFridge: 'Kühlschrank', locFreezer: 'Gefrierschrank', locPantry: 'Hauptvorratskammer', locOther: 'Andere', totalValue: 'Gesamtwert', wasteIndex: 'Abfallindex', consumptionFreq: 'Verbrauchshäufigkeit', nextPurchase: 'Nächster Kauf', topUsed: 'Meistgenutzt', outOfStock: 'Ausverkauft', avgLife: 'Durchschn. Lebensdauer', statStock: 'Lagerverwaltung', statWaste: 'Verschwendungskontrolle', statFinance: 'Finanzen & Ausgaben', statHabits: 'Nutzung & Gewohnheiten', days: 'Tage', recipes: 'Rezepte', recipeCoverage: 'Rezeptabdeckung', underMin: 'Unter Minimum', priceHistory: 'Preishistorie', wasteBtn: 'Als Abfall markieren', suggestions: 'Vorschläge', noData: 'Keine Daten' },
-            zh: { title: '我的食品室', pantry: '食品室', add: '添加', cart: '购物车', profile: '个人资料', stats: '统计', stock: '库存', loading: '正在启动...', loginSub: '您的智能库存。', addProductTitle: '添加产品', placeholderName: '例如：牛奶', saveBtn: '保存', logout: '登出', share: '分享', expiry: '有效期', category: '类别', search: '搜索...', empty: '没有产品', editTitle: '更新购买', stockActual: '当前库存', minimum: '最低限额', deleteBtn: '删除', productLabel: '产品', photoUrl: '照片网址 (可选)', confirmDelete: '删除产品？', deleteAll: '清除所有', confirmDeleteAll: '删除所有本地数据？', allClear: '✨ 一切正常', catGeneral: '常规', catDairy: '乳制品', catMeat: '肉类', catProduce: '水果/蔬菜', catPantry: '食品室', catDrinks: '饮料', catCleaning: '清洁', catHygiene: '卫生', price: '价格', location: '位置', locFridge: '冰箱', locFreezer: '冷冻柜', locPantry: '主食品室', locOther: '其他', totalValue: '总价值', wasteIndex: '浪费指数', consumptionFreq: '消耗频率', nextPurchase: '下次购买', topUsed: '最常用', outOfStock: '缺货', avgLife: '平均寿命', statStock: '库存管理', statWaste: '浪费控制', statFinance: '财务与支出', statHabits: '使用习惯', days: '天', recipes: '食谱', recipeCoverage: '食谱覆盖率', underMin: '低于最低额', priceHistory: '价格历史', wasteBtn: '标记为浪费', suggestions: '建议', noData: '无数据' },
-            ja: { title: 'マイパントリー', pantry: 'パントリー', add: '追加', cart: 'カート', profile: 'プロフィール', stats: '統計', stock: '在庫', loading: '起動中...', loginSub: 'スマートな在庫管理。', addProductTitle: '商品を追加', placeholderName: '例：牛乳', saveBtn: '保存', logout: 'ログアウト', share: '共有', expiry: '賞味期限', category: 'カテゴリー', search: '検索...', empty: '商品がありません', editTitle: '購入情報を更新', stockActual: '現在の在庫', minimum: '最小', deleteBtn: '削除', productLabel: '商品', photoUrl: '写真URL (任意)', confirmDelete: '商品を削除しますか？', deleteAll: 'すべて削除', confirmDeleteAll: 'すべてのローカルデータを削除しますか？', allClear: '✨ 準備完了', catGeneral: '一般', catDairy: '乳製品', catMeat: '肉類', catProduce: '果物・野菜', catPantry: 'パントリー', catDrinks: '飲料', catCleaning: '掃除用品', catHygiene: '衛生用品', price: '価格', location: '場所', locFridge: '冷蔵庫', locFreezer: '冷凍庫', locPantry: 'メインパントリー', locOther: 'その他', totalValue: '合計額', wasteIndex: '廃棄指数', consumptionFreq: '使用頻度', nextPurchase: '次回購入', topUsed: 'よく使うもの', outOfStock: '在庫切れ', avgLife: '平均寿命', statStock: '在庫管理', statWaste: '廃棄管理', statFinance: '財務と経費', statHabits: '使用習慣', days: '日', recipes: 'レシピ', recipeCoverage: 'レシピ充足率', underMin: '最小未満', priceHistory: '価格履歴', wasteBtn: '廃棄としてマーク', suggestions: '提案', noData: 'データなし' },
-            ru: { title: 'МояКладовая', pantry: 'Кладовая', add: 'Добавить', cart: 'Корзина', profile: 'Профиль', stats: 'Статистика', stock: 'Запас', loading: 'Запуск...', loginSub: 'Ваш умный инвентарь.', addProductTitle: 'Добавить продукт', placeholderName: 'Напр. Молоко', saveBtn: 'Сохранить', logout: 'Выйти', share: 'Поделиться', expiry: 'Срок годности', category: 'Категория', search: 'Поиск...', empty: 'Нет продуктов', editTitle: 'Обновить покупку', stockActual: 'Тек. запас', minimum: 'Мин.', deleteBtn: 'Уdalить', productLabel: 'Продукт', photoUrl: 'URL фото (Опционально)', confirmDelete: 'Удалить продукт?', deleteAll: 'Очистить всё', confirmDeleteAll: 'Удалить все локальные данные?', allClear: '✨ Всё в порядке', catGeneral: 'Общее', catDairy: 'Молочные продукты', catMeat: 'Мясо', catProduce: 'Фрукты/Овощи', catPantry: 'Кладовая', catDrinks: 'Напитки', catCleaning: 'Чистка', catHygiene: 'Гигиена', price: 'Цена', location: 'Расположение', locFridge: 'Холодильник', locFreezer: 'Морозильник', locPantry: 'Основная кладовая', locOther: 'Другое', totalValue: 'Общая стоимость', wasteIndex: 'Индекс отходов', consumptionFreq: 'Частота потребления', nextPurchase: 'Следующая покупка', topUsed: 'Самые популярные', outOfStock: 'Нет в наличии', avgLife: 'Ср. срок службы', statStock: 'Управление запасами', statWaste: 'Контроль отходов', statFinance: 'Финансы и расходы', statHabits: 'Использование и привычки', days: 'дн.', recipes: 'Рецепты', recipeCoverage: 'Доступность рецептов', underMin: 'Ниже минимума', priceHistory: 'История цен', wasteBtn: 'Отметить как отходы', suggestions: 'Предложения', noData: 'Нет данных' },
-            ar: { title: 'خزاناتي', pantry: 'الخزانة', add: 'إضافة', cart: 'العربة', profile: 'الملف الشخصي', stats: 'الإحصائيات', stock: 'المخزون', loading: 'جاري البدء...', loginSub: 'مخزونك الذكي.', addProductTitle: 'إضافة منتج', placeholderName: 'مثال: حليب', saveBtn: 'حفظ', logout: 'تسجيل الخروج', share: 'مشاركة', expiry: 'تاريخ الانتهاء', category: 'فئة', search: 'بحث...', empty: 'لا توجد منتجات', editTitle: 'تحديث الشراء', stockActual: 'المخزون الحالي', minimum: 'الحد الأدنى', deleteBtn: 'حذف', productLabel: 'المنتج', photoUrl: 'رابط الصورة (اختياري)', confirmDelete: 'حذف المنتج؟', deleteAll: 'مسح الكل', confirmDeleteAll: 'مسح جميع البيانات المحلية؟', allClear: '✨ كل شيء على ما يرام', catGeneral: 'عام', catDairy: 'ألبan', catMeat: 'لحوم', catProduce: 'فواكه/خضروات', catPantry: 'الخزانة', catDrinks: 'مشروبات', catCleaning: 'تنظيف', catHygiene: 'نظافة شخصية', price: 'السعر', location: 'الموقع', locFridge: 'الثلاجة', locFreezer: 'المجمدة', locPantry: 'المخزن الرئيسي', locOther: 'أخرى', totalValue: 'القيمة الإجمالية', wasteIndex: 'مؤشر الهدر', consumptionFreq: 'تكرار الاستهلاك', nextPurchase: 'الشراء القادم', topUsed: 'الأكثر استخداماً', outOfStock: 'نفد من المخزون', avgLife: 'متوسط العمر', statStock: 'إدارة المخزون', statWaste: 'مراقبة الهدر', statFinance: 'المالية والمصاريف', statHabits: 'الاستخدام والعادات', days: 'أيام', recipes: 'وصفات', recipeCoverage: 'تغطية الوصفات', underMin: 'تحت الحد الأدنى', priceHistory: 'تاريخ الأسعار', wasteBtn: 'تمييز كنفايات', suggestions: 'اقتراحات', noData: 'لا توجد بيانات' }
+            es: { title: 'MiAlacena Pro', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', search: 'Buscar...', empty: 'Vacío', save: 'Guardar', delete: 'Eliminar', edit: 'Detalle', language: 'Idioma', currency: 'Divisa', export: 'Exportar', import: 'Importar', deleteAll: 'Borrar Todo', greeting: 'Hola', statsStock: 'Estado Stock', lowItems: 'Bajos', expiry: 'Vencen', health: 'Salud Despensa', share: 'Compartir Lista' },
+            en: { title: 'MyPantry Pro', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', search: 'Search...', empty: 'Empty', save: 'Save', delete: 'Delete', edit: 'Detail', language: 'Language', currency: 'Currency', export: 'Export', import: 'Import', deleteAll: 'Clear All', greeting: 'Hello', statsStock: 'Stock Status', lowItems: 'Low', expiry: 'Expiry', health: 'Pantry Health', share: 'Share List' }
         };
 
-        /* global firebase */
-        const firebaseConfig = window.__firebase_config || {
-            apiKey: "demo-key",
-            authDomain: "demo.firebaseapp.com",
-            projectId: "demo-project",
-            storageBucket: "demo.appspot.com",
-            messagingSenderId: "000000000000",
-            appId: window.__app_id || "1:000000000000:web:0000000000000000000000"
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => { if (iconRef.current && lucide[name]) lucide.createIcons({ targets: [iconRef.current], icons: { [name]: lucide[name] } }); }, [name]);
+            return <i ref={iconRef} data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
-        if (typeof firebase !== 'undefined') {
-            firebase.initializeApp(firebaseConfig);
-        }
-
-        const NUTRIENT_MAP = {
-            'Lácteos': { p: 15, c: 15, f: 30, fb: 0 },
-            'Carnes': { p: 60, c: 0, f: 40, fb: 0 },
-            'Frutas/Verduras': { p: 5, c: 40, f: 5, fb: 50 },
-            'Despensa': { p: 10, c: 60, f: 20, fb: 10 },
-            'Dairy': { p: 15, c: 15, f: 30, fb: 0 },
-            'Meats': { p: 60, c: 0, f: 40, fb: 0 },
-            'Produce': { p: 5, c: 40, f: 5, fb: 50 },
-            'Pantry': { p: 10, c: 60, f: 20, fb: 10 }
-        };
+        const Toast = ({ msg, type = 'success' }) => (
+            <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl shadow-2xl animate-pop flex items-center gap-3 font-bold text-sm text-white ${type === 'error' ? 'bg-danger' : 'bg-brand'}`}>
+                <Icon name={type === 'error' ? 'AlertCircle' : 'CheckCircle'} size={18} /> {msg}
+            </div>
+        );
 
         function App() {
-            const [profileName, setProfileName] = useState(() => localStorage.getItem('pantry_profileName') || 'Carlos');
-            const [profileAvatar, setProfileAvatar] = useState(() => localStorage.getItem('pantry_profileAvatar') || `https://api.dicebear.com/7.x/avataaars/svg?seed=${localStorage.getItem('pantry_profileName') || 'Carlos'}`);
-            const [currencySymbol, setCurrencySymbol] = useState(() => localStorage.getItem('pantry_currency') || '$');
-            const [reminderDays, setReminderDays] = useState(() => parseInt(localStorage.getItem('pantry_reminderDays')) || 3);
-
-            useEffect(() => { localStorage.setItem('pantry_profileName', profileName); }, [profileName]);
-            useEffect(() => { localStorage.setItem('pantry_profileAvatar', profileAvatar); }, [profileAvatar]);
-            useEffect(() => { localStorage.setItem('pantry_currency', currencySymbol); }, [currencySymbol]);
-            useEffect(() => { localStorage.setItem('pantry_reminderDays', reminderDays); }, [reminderDays]);
-
-            const loginWithGoogle = () => {
-                if (typeof firebase === 'undefined' || !firebase.auth) {
-                    return alert("Firebase no cargado correctamente.");
-                }
-                const provider = new firebase.auth.GoogleAuthProvider();
-                firebase.auth().signInWithPopup(provider).then((result) => {
-                    if (result.user) {
-                        setProfileName(result.user.displayName || 'Usuario');
-                        setProfileAvatar(result.user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.user.displayName}`);
-                    }
-                }).catch((error) => {
-                    console.error("Auth Error:", error);
-                    alert("Error al iniciar sesión: " + error.message);
-                });
-            };
-
-            const requestNotificationPermission = () => {
-                if (!("Notification" in window)) return alert("Este navegador no soporta notificaciones.");
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        new Notification("¡Listo!", { body: `Te avisaremos ${reminderDays} días antes de que venzan tus productos.` });
-                    }
-                });
-            };
-
-            const getIcon = (name, cat) => {
-                const map = {
-                    'Lácteos': '🥛', 'Carnes': '🍖', 'Frutas/Verduras': '🍎', 'Despensa': '🥫',
-                    'Bebidas': '🥤', 'Limpieza': '🧹', 'Higiene': '🧼', 'General': '📦',
-                    'Dairy': '🥛', 'Meats': '🍖', 'Produce': '🍎', 'Pantry': '🥫',
-                    'Drinks': '🥤', 'Cleaning': '🧹', 'Hygiene': '🧼',
-                    'leche': '🥛', 'milk': '🥛', 'pan': '🍞', 'bread': '🍞', 'huevo': '🥚', 'egg': '🥚',
-                    'carne': '🥩', 'meat': '🥩', 'pollo': '🍗', 'chicken': '🍗',
-                    'arroz': '🍚', 'rice': '🍚', 'pasta': '🍝', 'agua': '💧', 'water': '💧',
-                    'cerveza': '🍺', 'beer': '🍺', 'vino': '🍷', 'wine': '🍷',
-                    'manzana': '🍎', 'apple': '🍎', 'platano': '🍌', 'banana': '🍌',
-                    'tomate': '🍅', 'tomato': '🍅', 'cebolla': '🧅', 'onion': '🧅'
-                };
-                return map[cat] || map[name.toLowerCase()] || '📦';
-            };
-
-            const getCategoryLabel = (cat) => {
-                const catMap = {
-                    'General': t.catGeneral, 'Lácteos': t.catDairy, 'Carnes': t.catMeat,
-                    'Frutas/Verduras': t.catProduce, 'Despensa': t.catPantry,
-                    'Bebidas': t.catDrinks, 'Limpieza': t.catCleaning, 'Higiene': t.catHygiene
-                };
-                return catMap[cat] || cat;
-            };
-
-            const getLocationLabel = (loc) => {
-                const locMap = {
-                    'Fridge': t.locFridge, 'Freezer': t.locFreezer, 'Pantry': t.locPantry, 'Other': t.locOther
-                };
-                return locMap[loc] || loc;
-            };
-
-            const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('pantry_products') || '[]'));
-            const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('pantry_recipes') || '[{"id":"1","name":"Pasta Básica","ingredients":[{"name":"pasta","qty":1},{"name":"tomate","qty":2}],"instructions":["Hierve agua con sal","Añade la pasta y cocina 10 minutos","Escurre y mezcla con tomate"]}]'));
-            const [loading, setLoading] = useState(false);
+            // --- State ---
+            const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('mialacena_db') || '[]'));
+            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mialacena_profile') || '{"name":"User","avatar":""}'));
+            const [lang, setLang] = useState(() => localStorage.getItem('mialacena_lang') || 'es');
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('mialacena_dark') === 'true');
+            const [currency, setCurrency] = useState(() => localStorage.getItem('mialacena_currency') || '$');
             const [activeTab, setActiveTab] = useState('pantry');
-            const [lang, setLang] = useState(() => localStorage.getItem('pantry_lang') || 'es');
-            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('pantry_darkMode') === 'true');
-            const [editingProduct, setEditingProduct] = useState(null);
-            const [heatmapMode, setHeatmapMode] = useState(false);
-            const [showQRModal, setShowQRModal] = useState(false);
-            const [qrData, setQrData] = useState('');
-            const [isScanning, setIsScanning] = useState(false);
-            const [isAIScanning, setIsAIScanning] = useState(false);
-            const [isTicketScanning, setIsTicketScanning] = useState(false);
+            const [search, setSearch] = useState('');
+            const [editing, setEditing] = useState(null);
+            const [toast, setToast] = useState(null);
             const [isListening, setIsListening] = useState(false);
-            const [isFormFillMode, setIsFormFillMode] = useState(false);
-            const [formStep, setFormStep] = useState(null);
-            const [lastCommand, setLastCommand] = useState('');
-            const [searchQuery, setSearchQuery] = useState('');
-
-            useEffect(() => {
-                localStorage.setItem('pantry_products', JSON.stringify(products));
-            }, [products]);
-
-            useEffect(() => {
-                localStorage.setItem('pantry_recipes', JSON.stringify(recipes));
-            }, [recipes]);
-
-            useEffect(() => {
-                localStorage.setItem('pantry_lang', lang);
-            }, [lang]);
-
-            useEffect(() => {
-                localStorage.setItem('pantry_darkMode', darkMode);
-            }, [darkMode]);
-
-            const user = { displayName: 'Mi Inventario Local', email: 'Modo Offline Activado' };
+            const [voiceStep, setVoiceStep] = useState(null);
+            const [showQR, setShowQR] = useState(false);
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
 
-            const [budget, setBudget] = useState(() => parseFloat(localStorage.getItem('pantry_budget')) || 100);
-
-            useEffect(() => {
-                localStorage.setItem('pantry_budget', budget);
-            }, [budget]);
-
-            const stats = React.useMemo(() => {
-                const now = new Date();
-                const predictions = {};
-
-                // TF.js Regression for Depletion Prediction
-                products.forEach(p => {
-                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume');
-                    if (consumes.length >= 3) {
-                        // Simple Linear Regression: x = days since created, y = total consumed
-                        const data = consumes.map(m => ({
-                            x: (new Date(m.date) - new Date(p.createdAt)) / (1000*60*60*24),
-                            y: m.qty
-                        }));
-
-                        const avgX = data.reduce((a, b) => a + b.x, 0) / data.length;
-                        const avgY = data.reduce((a, b) => a + b.y, 0) / data.length;
-
-                        let num = 0, den = 0;
-                        data.forEach(d => {
-                            num += (d.x - avgX) * (d.y - avgY);
-                            den += (d.x - avgX) ** 2;
-                        });
-
-                        const slope = den === 0 ? 0 : num / den; // Consumption per day
-                        if (slope > 0) {
-                            const daysLeft = p.stock / slope;
-                            predictions[p.id] = {
-                                days: Math.max(0, daysLeft).toFixed(1),
-                                date: new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000).toLocaleDateString(lang, {month:'short', day:'numeric'})
-                            };
-                        }
-                    }
-                });
-
-                const totalValue = products.reduce((acc, p) => acc + (p.stock * (p.price || 0)), 0);
-
-                const underMin = products.filter(p => p.stock <= p.min && p.stock > 0);
-                const outOfStock = products.filter(p => p.stock === 0);
-
-                const categoryStats = {};
-                const locationStats = {};
-                let totalWasted = 0;
-                let totalConsumed = 0;
-
-                const avgLifeStats = {};
-
-                products.forEach(p => {
-                    const cat = p.category || 'General';
-                    categoryStats[cat] = (categoryStats[cat] || 0) + (p.stock * (p.price || 0));
-
-                    const loc = p.location || 'Pantry';
-                    locationStats[loc] = (locationStats[loc] || 0) + 1;
-
-                    let pantryLife = 0;
-                    let completions = 0;
-
-                    (p.movementHistory || []).forEach(m => {
-                        if (m.type === 'waste') totalWasted += m.qty;
-                        if (m.type === 'consume') totalConsumed += m.qty;
-
-                        if ((m.type === 'consume' || m.type === 'waste') && p.createdAt) {
-                            const life = (new Date(m.date) - new Date(p.createdAt)) / (1000*60*60*24);
-                            if (life > 0) {
-                                pantryLife += life;
-                                completions++;
-                            }
-                        }
-                    });
-
-                    if (completions > 0) {
-                        if (!avgLifeStats[cat]) avgLifeStats[cat] = { total: 0, count: 0 };
-                        avgLifeStats[cat].total += (pantryLife / completions);
-                        avgLifeStats[cat].count += 1;
-                    }
-                });
-
-                const wasteIndex = totalConsumed + totalWasted > 0
-                    ? (totalWasted / (totalConsumed + totalWasted)) * 100
-                    : 0;
-
-                const categoryAvgLife = Object.entries(avgLifeStats).map(([cat, data]) => ({
-                    cat,
-                    avg: (data.total / data.count).toFixed(1)
-                }));
-
-                const cookableRecipes = (recipes || []).filter(r =>
-                    r && r.ingredients && r.ingredients.every(ing => {
-                        const p = products.find(p => p.name && p.name.toLowerCase() === (ing.name || "").toLowerCase());
-                        return p && p.stock >= (ing.qty || 0);
-                    })
-                ).length;
-                const recipeCoverage = (recipes && recipes.length > 0) ? (cookableRecipes / recipes.length) * 100 : 0;
-
-                const topUsed = [...products].sort((a, b) => {
-                    const aC = (a.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0);
-                    const bC = (b.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0);
-                    return bC - aC;
-                }).slice(0, 5).filter(p => (p.movementHistory || []).some(m => m.type === 'consume'));
-
-                const frequencyData = products.map(p => {
-                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume').sort((a, b) => new Date(a.date) - new Date(b.date));
-                    if (consumes.length < 2) return null;
-                    const diffs = [];
-                    for(let i=1; i<consumes.length; i++) {
-                        diffs.push((new Date(consumes[i].date) - new Date(consumes[i-1].date)) / (1000*60*60*24));
-                    }
-                    const avg = diffs.reduce((a,b) => a+b, 0) / diffs.length;
-                    return { name: p.name, avg: avg.toFixed(1) };
-                }).filter(Boolean);
-
-                const suggestions = products.filter(p => {
-                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume');
-                    if (consumes.length < 2) return p.stock <= p.min;
-                    const last = new Date(consumes[consumes.length-1].date);
-                    const diffDays = (now - last) / (1000*60*60*24);
-                    const frequencyDataForP = frequencyData.find(f => f.name === p.name);
-                    return p.stock <= p.min || (frequencyDataForP && diffDays >= parseFloat(frequencyDataForP.avg));
-                }).slice(0, 3);
-
-                let totalInflation = 0;
-                let inflationCount = 0;
-                products.forEach(p => {
-                    if (p.priceHistory && p.priceHistory.length > 1) {
-                        const start = p.priceHistory[0].price;
-                        const end = p.priceHistory[p.priceHistory.length - 1].price;
-                        if (start > 0) {
-                            totalInflation += ((end - start) / start) * 100;
-                            inflationCount++;
-                        }
-                    }
-                });
-                const personalInflation = inflationCount > 0 ? (totalInflation / inflationCount).toFixed(1) : 0;
-
-                const clusters = {};
-                products.forEach(p => {
-                    const cat = p.category || 'General';
-                    if (!clusters[cat]) clusters[cat] = [];
-                    clusters[cat].push(p.name);
-                });
-
-                // Pantry Health Analysis
-                let totalP = 0, totalC = 0, totalF = 0, totalFB = 0;
-                products.forEach(p => {
-                    const nutrients = NUTRIENT_MAP[p.category] || { p: 10, c: 70, f: 15, fb: 5 }; // Default more carb-heavy
-                    totalP += (nutrients.p * p.stock);
-                    totalC += (nutrients.c * p.stock);
-                    totalF += (nutrients.f * p.stock);
-                    totalFB += (nutrients.fb * p.stock);
-                });
-                const totalN = totalP + totalC + totalF;
-                const macros = totalN > 0 ? {
-                    p: (totalP / totalN * 100).toFixed(0),
-                    c: (totalC / totalN * 100).toFixed(0),
-                    f: (totalF / totalN * 100).toFixed(0),
-                    fb: totalFB.toFixed(0)
-                } : { p: 0, c: 0, f: 0, fb: 0 };
-
-                const healthAlerts = [];
-                if (totalN > 0) {
-                    if (parseInt(macros.c) > 70) healthAlerts.push(t.processingAlert);
-                    if (parseInt(macros.p) < 15 || parseInt(macros.fb) < 20) healthAlerts.push(t.fiberAlert);
-                }
-
-                // Money Leak Detection
-                const leaks = products.map(p => {
-                    const wasted = (p.movementHistory || []).filter(m => m.type === 'waste').reduce((acc, m) => acc + m.qty, 0);
-                    const cost = wasted * (p.price || 0);
-                    const moves = (p.movementHistory || []).filter(m => m.type === 'add').length;
-                    return { id: p.id, name: p.name, cost, moves, wasted };
-                }).filter(l => l.cost > 0 || l.moves > 5).sort((a, b) => b.cost - a.cost);
-
-                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions, clusters, macros, healthAlerts, leaks };
-            }, [products, lang, budget]);
-
-            if (loading) return (
-                <div className="h-screen flex flex-col items-center justify-center bg-slate-50">
-                    <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <div className="text-emerald-600 font-bold animate-pulse text-xl tracking-tight">{t.title} Pro</div>
-                </div>
-            );
-
-            return (
-                <div className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`}>
-                <div className="max-w-5xl mx-auto min-h-screen pb-32 px-4">
-                    <header className="pt-8 pb-6 flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-[#fce0d3] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
-                                <img src={profileAvatar} alt="Avatar" className="w-10 h-10 mt-2" />
-                            </div>
-                            <div>
-                                <p className="text-[#94a3b8] text-xs font-medium">{t.greeting}</p>
-                                <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{t.hello}, {profileName}</h1>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                             <button
-                                onClick={() => startVoiceAssistant()}
-                                title={t.voiceAssistant}
-                                className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm border border-slate-100 ${isListening ? 'bg-red-500 text-white animate-pulse' : (darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f8fafc]')}`}
-                             >
-                                <span className="material-symbols-rounded">mic</span>
-                             </button>
-                             <button className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm border border-slate-100 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f8fafc]'}`}>
-                                <span className="material-symbols-rounded text-[#334155]">notifications</span>
-                             </button>
-                        </div>
-                    </header>
-
-                    {activeTab === 'pantry' ? (
-                        <React.Fragment>
-                            <div className="flex flex-col gap-6">
-                            <div className={`relative flex items-center p-4 rounded-2xl shadow-sm border border-slate-100 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#f1f5f9]'}`}>
-                                <span className="material-symbols-rounded text-[#94a3b8] absolute left-4">search</span>
-                                <input
-                                    type="text"
-                                    placeholder={t.search}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="bg-transparent w-full pl-10 outline-none text-sm font-medium placeholder:text-[#94a3b8]"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                                    <p className="text-[10px] text-[#94a3b8] font-bold uppercase tracking-wider">{t.totalValue}</p>
-                                    <h2 className="text-2xl font-extrabold text-[#0f172a]">{products.length}</h2>
-                                    <div className="flex items-center gap-1 text-[#19e66f] text-[10px] font-bold">
-                                        <span className="material-symbols-rounded !text-[14px]">trending_up</span>
-                                        2%
-                                    </div>
-                                </div>
-                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#fff7ed]'}`}>
-                                    <p className="text-[10px] text-[#f97316] font-bold uppercase tracking-wider">{t.underMin}</p>
-                                    <h2 className="text-2xl font-extrabold text-[#f97316]">{stats.underMin.length.toString().padStart(2, '0')}</h2>
-                                    <div className="flex items-center gap-1 text-[#f97316] text-[10px] font-bold">
-                                        <span className="material-symbols-rounded !text-[14px]">warning</span>
-                                        {t.alert}
-                                    </div>
-                                </div>
-                                <div className={`p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-1 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#fff1f2]'}`}>
-                                    <p className="text-[10px] text-[#e11d48] font-bold uppercase tracking-wider">{t.expiry}</p>
-                                    <h2 className="text-2xl font-extrabold text-[#e11d48]">
-                                        {products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) / (1000*60*60*24) < reminderDays).length.toString().padStart(2, '0')}
-                                    </h2>
-                                    <div className="flex items-center gap-1 text-[#e11d48] text-[10px] font-bold">
-                                        <span className="material-symbols-rounded !text-[14px]">event_busy</span>
-                                        {t.soon}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center px-1">
-                                <div className="flex items-center gap-2">
-                                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Mi Alacena</h2>
-                                    <button
-                                        onClick={() => setHeatmapMode(!heatmapMode)}
-                                        className={`p-1 rounded-md text-[10px] font-bold uppercase transition-all ${heatmapMode ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}
-                                    >
-                                        {t.heatmap}
-                                    </button>
-                                </div>
-                                <button className="text-primary text-sm font-bold">{t.seeAll}</button>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 pb-20">
-                                {products.length === 0 ? (
-                                <p className="col-span-full text-center text-slate-400 mt-10 animate-pulse">{t.empty}</p>
-                                ) : products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => {
-                                    let heatmapStyle = {};
-                                    if (heatmapMode) {
-                                        const ageDays = (new Date() - new Date(p.createdAt || Date.now())) / (1000*60*60*24);
-                                        // Scale: 0 days = blue, 14+ days = red
-                                        const hue = Math.max(0, Math.min(240, 240 - (ageDays * (240/14)))); // 240 (blue) to 0 (red)
-                                        heatmapStyle = { backgroundColor: `hsla(${hue}, 70%, 50%, 0.15)`, borderColor: `hsla(${hue}, 70%, 50%, 0.4)` };
-                                    }
-                                    return (
-                                        <div key={p.id} style={heatmapStyle} className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'} p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4 animate-pop`}>
-                                            <div className="w-20 h-20 rounded-2xl bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
-                                                {p.photo ? (
-                                                    <img src={p.photo} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="text-4xl">{getIcon(p.name, p.category)}</div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 flex flex-col gap-1 min-w-0">
-                                                <div className="flex justify-between items-start">
-                                                    <h3 className={`font-bold truncate text-lg ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>{p.name}</h3>
-                                                    {p.stock <= p.min && (
-                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold shrink-0 ${p.stock === 0 ? 'bg-[#fff1f2] text-[#e11d48]' : 'bg-[#fff7ed] text-[#f97316]'}`}>
-                                                            {p.stock === 0 ? 'Crítico' : 'Bajo'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-[#94a3b8] text-xs font-medium">
-                                                    {p.stock} de {Math.max(p.stock, p.min * 2)} {p.unit || t.uUnit}
-                                                </p>
-                                                <div className="flex items-center gap-3 mt-1">
-                                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full transition-all duration-500 ${
-                                                                p.stock === 0 ? 'bg-red-500' :
-                                                                p.stock <= p.min ? 'bg-orange-500' : 'bg-primary'
-                                                            }`}
-                                                            style={{ width: `${Math.min(100, (p.stock / (p.min * 2 || 1)) * 100)}%` }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setEditingProduct(p)}
-                                                className="p-2 text-[#94a3b8] hover:text-slate-600 transition-colors"
-                                            >
-                                                <span className="material-symbols-rounded">more_vert</span>
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            </div>
-                            <button
-                                onClick={() => setActiveTab('add')}
-                                className="fixed bottom-28 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-90 transition-transform"
-                            >
-                                <span className="material-symbols-rounded !text-4xl">add</span>
-                            </button>
-                        </React.Fragment>
-                    ) : activeTab === 'add' ? (
-                        <div className={`animate-pop p-6 rounded-[2.5rem] shadow-xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                             <h2 className="text-xl font-bold mb-4">{t.addProductTitle}</h2>
-                             <div className="grid gap-3">
-                                 <div className="flex gap-2">
-                                     <input
-                                        id="pName"
-                                        type="text"
-                                        placeholder={t.placeholderName}
-                                        onInput={(e) => {
-                                            const val = e.target.value.toLowerCase();
-                                            const match = products.find(p => p.name.toLowerCase().startsWith(val));
-                                            if (val.length > 1 && match) {
-                                                document.getElementById('pCat').value = match.category;
-                                                document.getElementById('pUnit').value = match.unit || 'unid';
-                                                document.getElementById('pLoc').value = match.location || 'Pantry';
-                                            }
-                                        }}
-                                        className={`flex-1 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}
-                                     />
-                                     <button
-                                        onClick={() => runAIScan()}
-                                        title={t.aiScan}
-                                        className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
-                                     >
-                                        {isAIScanning ? '⌛' : '👁️'}
-                                     </button>
-                                     <button
-                                        onClick={() => scanTicket()}
-                                        title="OCR Ticket"
-                                        className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
-                                     >
-                                        {isTicketScanning ? '⌛' : '🧾'}
-                                     </button>
-                                     <button
-                                        onClick={() => startVoiceAssistant(null, true)}
-                                        title="Voz a Formulario"
-                                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600'}`}
-                                     >
-                                        <span className="material-symbols-rounded">mic</span>
-                                     </button>
-                                 </div>
-                                 <div className="flex gap-2">
-                                     <input id="pStock" type="number" step="any" placeholder={t.stock} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                     <input id="pMin" type="number" step="any" placeholder="Min" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                 </div>
-                                 <div className="flex gap-2">
-                                     <input id="pPrice" type="number" step="0.01" placeholder={t.price} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                     <select id="pLoc" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
-                                         {['Pantry', 'Fridge', 'Freezer', 'Other'].map(l => <option key={l} value={l}>{getLocationLabel(l)}</option>)}
-                                     </select>
-                                 </div>
-                                 <div className="flex gap-2">
-                                     <select id="pCat" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
-                                         {['General', 'Lácteos', 'Carnes', 'Frutas/Verduras', 'Despensa', 'Bebidas', 'Limpieza', 'Higiene'].map(c => <option key={c} value={c}>{getCategoryLabel(c)}</option>)}
-                                     </select>
-                                     <select id="pUnit" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
-                                         {['unid', 'litros', 'gramos', 'kilos', 'ml'].map(u => <option key={u} value={u}>{t['u' + u.charAt(0).toUpperCase() + u.slice(1).replace('unid','Unit').replace('ml','Milliliters')] || u}</option>)}
-                                     </select>
-                                 </div>
-                                 <input id="pExpiry" type="date" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                 <input id="pPhoto" type="text" placeholder={t.photoUrl} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                 {isAIScanning && (
-                                     <div className="text-[10px] font-bold text-emerald-600 animate-pulse ml-2">
-                                         {t.aiAnalyzing}
-                                     </div>
-                                 )}
-                                 <button onClick={() => {
-                                     const name = document.getElementById('pName').value;
-                                     const stock = document.getElementById('pStock').value;
-                                     const min = document.getElementById('pMin').value;
-                                     const cat = document.getElementById('pCat').value;
-                                     const exp = document.getElementById('pExpiry').value;
-                                     const photo = document.getElementById('pPhoto').value;
-                                     const price = document.getElementById('pPrice').value;
-                                     const loc = document.getElementById('pLoc').value;
-                                     const unit = document.getElementById('pUnit').value;
-                                     if(name) addProduct(name, stock, min, cat, exp, photo, price, loc, unit);
-                                 }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-2">{t.saveBtn}</button>
-                             </div>
-                        </div>
-                    ) : activeTab === 'profile' ? (
-                        <React.Fragment>
-                        <div className="animate-pop flex flex-col gap-6">
-                            <div className="flex flex-col items-center gap-2 mb-4">
-                                <div className="w-24 h-24 rounded-full bg-[#fce0d3] border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                                    <img src={profileAvatar} alt="Avatar" className="w-20 h-20 mt-4" />
-                                </div>
-                                <div className="flex flex-col items-center gap-1 w-full max-w-[200px]">
-                                    <input
-                                        type="text"
-                                        value={profileName}
-                                        onChange={(e) => setProfileName(e.target.value)}
-                                        className={`text-2xl font-bold text-center w-full bg-transparent outline-none focus:border-b-2 border-primary ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="URL de Avatar"
-                                        value={profileAvatar}
-                                        onChange={(e) => setProfileAvatar(e.target.value)}
-                                        className="text-[10px] text-[#94a3b8] text-center w-full bg-transparent outline-none"
-                                    />
-                                </div>
-                                <button
-                                    onClick={() => loginWithGoogle()}
-                                    className={`mt-2 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-white border shadow-sm hover:bg-slate-50'}`}
-                                >
-                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" />
-                                    Google Login
-                                </button>
-                            </div>
-
-                            <div className="flex flex-col gap-3">
-                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="material-symbols-rounded text-primary">language</span>
-                                        <span className="font-bold text-sm">Idioma</span>
-                                    </div>
-                                    <select
-                                        value={lang}
-                                        onChange={(e) => setLang(e.target.value)}
-                                        className={`bg-transparent text-sm font-bold outline-none uppercase ${darkMode ? 'text-white' : 'text-slate-600'}`}
-                                    >
-                                        {Object.keys(TRANSLATIONS).map(l => (
-                                            <option key={l} value={l}>{l}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="material-symbols-rounded text-primary">{darkMode ? 'dark_mode' : 'light_mode'}</span>
-                                        <span className="font-bold text-sm">Modo Oscuro</span>
-                                    </div>
-                                    <button
-                                        onClick={() => setDarkMode(!darkMode)}
-                                        className={`w-12 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary' : 'bg-slate-200'}`}
-                                    >
-                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${darkMode ? 'left-7' : 'left-1'}`}></div>
-                                    </button>
-                                </div>
-
-                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="material-symbols-rounded text-primary">payments</span>
-                                        <span className="font-bold text-sm">Divisa y Presupuesto</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <select
-                                            value={currencySymbol}
-                                            onChange={(e) => setCurrencySymbol(e.target.value)}
-                                            className={`bg-transparent text-sm font-bold outline-none ${darkMode ? 'text-white' : 'text-slate-600'}`}
-                                        >
-                                            {['$', '₡', '€', '£', '¥'].map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                        <input
-                                            type="number"
-                                            value={budget}
-                                            onChange={(e) => setBudget(e.target.value)}
-                                            className="w-16 bg-transparent text-right outline-none font-bold text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className={`p-4 rounded-3xl border border-slate-100 flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="material-symbols-rounded text-primary">notifications_active</span>
-                                        <span className="font-bold text-sm">Alertas (días antes)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            value={reminderDays}
-                                            onChange={(e) => setReminderDays(e.target.value)}
-                                            className="w-10 bg-transparent text-center outline-none font-bold text-sm"
-                                        />
-                                        <button
-                                            onClick={() => requestNotificationPermission()}
-                                            className="p-2 rounded-full bg-primary/10 text-primary"
-                                        >
-                                            <span className="material-symbols-rounded !text-lg">notifications</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 mt-2">
-                                    <button
-                                        onClick={() => generateQR()}
-                                        className={`p-4 rounded-3xl border border-slate-100 flex flex-col items-center gap-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
-                                    >
-                                        <span className="material-symbols-rounded text-primary">qr_code_2</span>
-                                        <span className="text-[10px] font-bold uppercase">{t.qrGenerate}</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setIsScanning(true)}
-                                        className={`p-4 rounded-3xl border border-slate-100 flex flex-col items-center gap-2 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}
-                                    >
-                                        <span className="material-symbols-rounded text-primary">qr_code_scanner</span>
-                                        <span className="text-[10px] font-bold uppercase">{t.qrScanner}</span>
-                                    </button>
-                                </div>
-
-                                <button
-                                    onClick={() => {
-                                        if(confirm(t.confirmDeleteAll)) {
-                                            setProducts([]);
-                                            localStorage.clear();
-                                            window.location.reload();
-                                        }
-                                    }}
-                                    className="mt-4 p-4 rounded-3xl bg-red-50 text-red-500 font-bold text-sm border border-red-100 active:scale-95 transition-all"
-                                >
-                                    {t.deleteAll}
-                                </button>
-                            </div>
-
-                            {showQRModal && (
-                                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-8 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full`}>
-                                        <h3 className="font-bold mb-4">{t.qrSync}</h3>
-                                        <canvas id="qrCanvas" className="mx-auto bg-white p-2 rounded-xl"></canvas>
-                                        <p className="text-xs text-slate-500 mt-4">Escanea esto con otro dispositivo para clonar el inventario.</p>
-                                        <button onClick={() => setShowQRModal(false)} className="mt-6 w-full p-4 bg-emerald-500 text-white rounded-2xl font-bold">Cerrar</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {isScanning && (
-                                <div className="fixed inset-0 bg-black z-[200] flex flex-col">
-                                    <div id="reader" className="flex-1"></div>
-                                    <div className="p-6 bg-slate-900 flex justify-center">
-                                        <button
-                                            onClick={() => stopScanner()}
-                                            className="bg-white text-slate-900 px-8 py-4 rounded-full font-bold"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                            </div>
-                        </React.Fragment>
-                    ) : activeTab === 'cart' ? (
-                        <div className="animate-pop">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold">{t.cart}</h2>
-                                <button
-                                    onClick={() => {
-                                        const list = products.filter(p => p.stock <= p.min).map(p => `- ${p.name} (${p.stock}/${p.min})`).join('\n');
-                                        if (navigator.share) {
-                                            navigator.share({ title: t.cart, text: list });
-                                        } else {
-                                            alert(list);
-                                        }
-                                    }}
-                                    className="bg-emerald-500 text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-lg"
-                                >
-                                    {t.share} 📤
-                                </button>
-                            </div>
-                            <div className="grid gap-3">
-                                {products.filter(p => p.stock <= p.min).length === 0 ? (
-                                    <p className="text-center text-slate-400 mt-10">{t.allClear}</p>
-                                ) : products.filter(p => p.stock <= p.min).map(p => (
-                                    <div key={p.id} className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'} p-4 rounded-3xl border shadow-sm flex justify-between items-center`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xl">{getIcon(p.name, p.category)}</div>
-                                            <div>
-                                                <h3 onClick={() => setEditingProduct(p)} className="font-bold cursor-pointer hover:text-emerald-500 transition-colors">{p.name}</h3>
-                                                <p className="text-xs text-red-500 font-bold">{t.stock}: {p.stock} / Min: {p.min}</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => setEditingProduct(p)} className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">✏️</button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : activeTab === 'stats' ? (
-                        <div className="animate-pop pb-10">
-                            <h2 className="text-3xl font-extrabold mb-8">{t.stats}</h2>
-
-                            {/* Stock & Reposición */}
-                            <section className="mb-8">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">📦 {t.statStock}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.underMin}</p>
-                                        <div className="space-y-2">
-                                            {stats.underMin.length === 0 ? <p className="text-slate-400 text-sm">--</p> : stats.underMin.map(p => (
-                                                <div key={p.id} className="flex justify-between items-center text-sm">
-                                                    <span>{p.name}</span>
-                                                    <span className="font-bold text-orange-500">{p.stock} / {p.min}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.outOfStock}</p>
-                                        <p className="text-4xl font-black text-red-500">{stats.outOfStock.length}</p>
-                                        <div className="mt-2 text-xs text-slate-400">
-                                            {stats.outOfStock.map(p => p.name).join(', ') || '--'}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent col-span-full`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.consumptionFreq} / {t.nextPurchase}</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                {stats.frequencyData.map(f => (
-                                                    <div key={f.name} className="text-xs flex justify-between">
-                                                        <span>{f.name}</span>
-                                                        <span className="text-emerald-500 font-bold">{f.avg} {t.days}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800">
-                                                <p className="text-[10px] font-bold text-emerald-600 uppercase mb-2">💡 {t.suggestions || 'Suggestion'}</p>
-                                                {stats.suggestions.map(s => (
-                                                    <div key={s.id} className="mb-2">
-                                                        <p className="text-sm font-bold">🛒 {s.name}</p>
-                                                        {stats.clusters[s.category] && stats.clusters[s.category].length > 1 && (
-                                                            <p className="text-[9px] text-emerald-500 opacity-70 italic ml-4">
-                                                                + {stats.clusters[s.category].filter(n => n !== s.name).slice(0, 2).join(', ')}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                {stats.suggestions.length === 0 && <p className="text-xs text-slate-400">{t.noData || 'No data'}</p>}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* Control de Desperdicio */}
-                            <section className="mb-8">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">🍎 {t.statWaste}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.wasteIndex}</p>
-                                        <div className="flex items-end gap-2">
-                                            <p className="text-4xl font-black text-orange-500">{stats.wasteIndex.toFixed(1)}%</p>
-                                            <p className="text-[10px] text-slate-400 mb-1">({t.expiry})</p>
-                                        </div>
-                                        <div className="mt-4 h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                            <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${stats.wasteIndex}%` }}></div>
-                                        </div>
-                                        <div className="mt-4 space-y-1">
-                                            {products.filter(p => p.expiry && new Date(p.expiry) < new Date(Date.now() + 3*24*60*60*1000)).slice(0, 3).map(p => (
-                                                <div key={p.id} className="text-[10px] flex justify-between">
-                                                    <span className="truncate max-w-[100px]">{p.name}</span>
-                                                    <span className={new Date(p.expiry) < new Date() ? 'text-red-500' : 'text-orange-500'}>{new Date(p.expiry).toLocaleDateString(lang, {month:'short', day:'numeric'})}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.avgLife} ({t.category})</p>
-                                        <div className="space-y-3">
-                                            {stats.categoryAvgLife.length === 0 ? (
-                                                ['Lácteos', 'Carnes', 'Frutas/Verduras'].map(cat => (
-                                                    <div key={cat} className="flex justify-between items-center text-xs font-bold">
-                                                        <span className="text-slate-400 uppercase">{getCategoryLabel(cat)}</span>
-                                                        <span className="opacity-50">-- {t.days}</span>
-                                                    </div>
-                                                ))
-                                            ) : stats.categoryAvgLife.map(item => (
-                                                <div key={item.cat} className="flex justify-between items-center text-xs font-bold">
-                                                    <span className="text-slate-400 uppercase">{getCategoryLabel(item.cat)}</span>
-                                                    <span>{item.avg} {t.days}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* Salud de Despensa */}
-                            <section className="mb-8">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">🥗 {t.statHealth}</h3>
-                                <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div>
-                                            <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.healthCoach}</p>
-                                            <p className={`text-lg font-bold ${stats.healthAlerts.length > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                {stats.healthAlerts.length > 0 ? t.unbalanced : t.balanced}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-slate-500 font-bold uppercase mb-1">{t.fiber}</p>
-                                            <p className="text-lg font-bold text-blue-500">{stats.macros.fb}g</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4 mb-6">
-                                        <div className="text-center">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.proteins}</div>
-                                            <div className="text-xl font-black text-red-400">{stats.macros.p}%</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.carbs}</div>
-                                            <div className="text-xl font-black text-orange-400">{stats.macros.c}%</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.fats}</div>
-                                            <div className="text-xl font-black text-yellow-400">{stats.macros.f}%</div>
-                                        </div>
-                                    </div>
-                                    {stats.healthAlerts.map((alert, i) => (
-                                        <div key={i} className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-2xl text-orange-600 dark:text-orange-400 text-xs font-bold mb-2">
-                                            <span className="material-symbols-rounded !text-sm">lightbulb</span>
-                                            {alert}
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-
-                            {/* Finanzas y Gastos */}
-                            <section className="mb-8">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">💰 {t.statFinance}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.totalValue}</p>
-                                        <p className="text-4xl font-black text-emerald-600">{currencySymbol}{stats.totalValue.toFixed(2)}</p>
-                                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.inflation}</p>
-                                            <p className={`text-xl font-black ${stats.personalInflation > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                                {stats.personalInflation > 0 ? '↑' : '↓'} {Math.abs(stats.personalInflation)}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.statLeaks}</p>
-                                        <div className="space-y-3">
-                                            {stats.leaks.slice(0, 3).map(leak => (
-                                                <div key={leak.id} className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-xs font-bold truncate">{leak.name}</span>
-                                                        <span className="text-xs font-bold text-red-500">{currencySymbol}{leak.cost.toFixed(2)}</span>
-                                                    </div>
-                                                    <p className="text-[9px] text-slate-400 italic leading-tight">{t.leakAlert}</p>
-                                                </div>
-                                            ))}
-                                            {stats.leaks.length === 0 && <p className="text-xs text-slate-400 italic">{t.noData}</p>}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent col-span-full`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.category}</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                                            {Object.entries(stats.categoryStats).map(([cat, val]) => (
-                                                <div key={cat}>
-                                                    <div className="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-500">
-                                                        <span>{getCategoryLabel(cat)}</span>
-                                                        <span>{currencySymbol}{val.toFixed(2)}</span>
-                                                    </div>
-                                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${(val / (stats.totalValue || 1)) * 100}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* Uso y Hábitos */}
-                            <section className="mb-8">
-                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">📊 {t.statHabits}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-4">{t.topUsed}</p>
-                                        <div className="space-y-2">
-                                            {stats.topUsed.length === 0 ? <p className="text-slate-400 text-sm">--</p> : stats.topUsed.map(p => (
-                                                <div key={p.id} className="flex justify-between items-center text-sm">
-                                                    <span>{p.name}</span>
-                                                    <span className="font-bold text-emerald-500">
-                                                        {(p.movementHistory || []).filter(m => m.type === 'consume').reduce((acc, m) => acc + m.qty, 0)}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">💎 Forgotten Items</p>
-                                        <div className="space-y-1 mt-2">
-                                            {products.filter(p => (p.movementHistory || []).length < 2 && (new Date() - new Date(p.createdAt)) > 30*24*60*60*1000).slice(0, 3).map(p => (
-                                                <div key={p.id} className="text-[10px] font-bold text-blue-500">🏚️ {p.name}</div>
-                                            ))}
-                                            {products.filter(p => (p.movementHistory || []).length < 2 && (new Date() - new Date(p.createdAt)) > 30*24*60*60*1000).length === 0 && <p className="text-[10px] text-slate-400">All moving well</p>}
-                                        </div>
-                                    </div>
-                                    <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} p-6 rounded-[2.5rem] shadow-sm border border-transparent`}>
-                                        <p className="text-xs text-slate-500 font-bold uppercase mb-2">{t.recipeCoverage}</p>
-                                        <p className="text-4xl font-black text-blue-500">{stats.recipeCoverage.toFixed(0)}%</p>
-                                        <div className="mt-4 flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-                                            {Object.entries(stats.locationStats).map(([loc, count]) => (
-                                                <div key={loc} className="flex-1 text-center min-w-[60px]">
-                                                    <div className="text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">{getLocationLabel(loc)}</div>
-                                                    <div className="text-lg font-bold">{count}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
-                    ) : (
-                        <div className="animate-pop text-center py-20 text-slate-400 font-bold">
-                            [ERROR 404] <br/> Tab no encontrada
-                        </div>
-                    )}
-
-                    {editingProduct && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                            <div className={`animate-pop w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-white'}`}>
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-bold">{t.editTitle}</h2>
-                                    <button onClick={() => setEditingProduct(null)} className="text-2xl">✕</button>
-                                </div>
-                                <div className="grid gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.productLabel}</label>
-                                        <input
-                                            value={editingProduct.name}
-                                            onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                                            className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                        />
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.stockActual}</label>
-                                            <input
-                                                type="number"
-                                                step="any"
-                                                value={editingProduct.stock}
-                                                onChange={(e) => setEditingProduct({...editingProduct, stock: parseFloat(e.target.value) || 0})}
-                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.unit}</label>
-                                            <select
-                                                value={editingProduct.unit || 'unid'}
-                                                onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})}
-                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            >
-                                                {['unid', 'litros', 'gramos', 'kilos', 'ml'].map(u => <option key={u} value={u}>{t['u' + u.charAt(0).toUpperCase() + u.slice(1).replace('unid','Unit').replace('ml','Milliliters')] || u}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.price}</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={editingProduct.price || ''}
-                                                onChange={(e) => setEditingProduct({...editingProduct, price: parseFloat(e.target.value) || 0})}
-                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.minimum}</label>
-                                            <input
-                                                type="number"
-                                                value={editingProduct.min}
-                                                onChange={(e) => setEditingProduct({...editingProduct, min: parseFloat(e.target.value) || 0})}
-                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.location}</label>
-                                            <select
-                                                value={editingProduct.location || 'Pantry'}
-                                                onChange={(e) => setEditingProduct({...editingProduct, location: e.target.value})}
-                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            >
-                                                {['Pantry', 'Fridge', 'Freezer', 'Other'].map(l => <option key={l} value={l}>{getLocationLabel(l)}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                {editingProduct.priceHistory && editingProduct.priceHistory.length > 1 && (
-                                    <div className="mt-2">
-                                        <p className="text-[10px] font-bold uppercase text-slate-400 ml-2 mb-1">{t.priceHistory}</p>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                            {editingProduct.priceHistory.slice(-5).reverse().map((ph, idx) => (
-                                                <div key={idx} className="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl text-center min-w-[70px] border border-slate-100 dark:border-slate-600">
-                                                    <div className="text-[9px] text-slate-400">{new Date(ph.date).toLocaleDateString(lang, {month:'short', day:'numeric'})}</div>
-                                                    <div className="text-xs font-bold text-emerald-600">{currencySymbol}{ph.price}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                    <button
-                                        onClick={() => {
-                                            updateProduct(editingProduct);
-                                            setEditingProduct(null);
-                                        }}
-                                        className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-4"
-                                    >
-                                        {t.saveBtn}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            markAsWaste(editingProduct.id);
-                                            setEditingProduct(null);
-                                        }}
-                                        className="w-full p-4 bg-orange-100 text-orange-600 rounded-2xl font-bold transition-all active:scale-95 mt-2"
-                                    >
-                                        🗑️ {t.wasteBtn}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if(confirm(t.confirmDelete)) {
-                                                setProducts(products.filter(p => p.id !== editingProduct.id));
-                                                setEditingProduct(null);
-                                            }
-                                        }}
-                                        className="w-full p-4 bg-red-50 text-red-500 rounded-2xl font-bold transition-all active:scale-95"
-                                    >
-                                        {t.deleteBtn}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <nav className={`fixed bottom-0 left-0 w-full py-4 px-6 border-t flex justify-around items-center z-50 transition-all ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-100 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]'}`}>
-                        {[
-                            { id: 'pantry', label: t.pantry, icon: 'inventory_2' },
-                            { id: 'stats', label: t.stats, icon: 'bar_chart' },
-                            { id: 'cart', label: t.cart, icon: 'shopping_cart' },
-                            { id: 'profile', label: t.profile, icon: 'settings' }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${activeTab === tab.id ? 'text-primary' : 'text-[#94a3b8]'}`}
-                            >
-                                {tab.id === 'cart' && products.filter(p => p.stock <= p.min).length > 0 && (
-                                    <span className="absolute -top-1 right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-                                        {products.filter(p => p.stock <= p.min).length}
-                                    </span>
-                                )}
-                                <span className="material-symbols-rounded">{tab.icon}</span>
-                                <span className="text-[10px] font-bold">{tab.label}</span>
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-                </div>
-            );
-
-            async function updateQty(id, newVal) {
-                if (newVal < 0) return;
-                setProducts(prev => prev.map(p => {
-                    if (p.id === id) {
-                        const diff = newVal - p.stock;
-                        const movement = {
-                            qty: Math.abs(diff),
-                            type: diff > 0 ? 'add' : 'consume',
-                            date: new Date().toISOString()
-                        };
-                        return {
-                            ...p,
-                            stock: newVal,
-                            movementHistory: [...(p.movementHistory || []), movement]
-                        };
-                    }
-                    return p;
-                }));
-            }
-
-            async function markAsWaste(id) {
-                setProducts(prev => prev.map(p => {
-                    if (p.id === id) {
-                        const movement = {
-                            qty: p.stock,
-                            type: 'waste',
-                            date: new Date().toISOString()
-                        };
-                        return {
-                            ...p,
-                            stock: 0,
-                            movementHistory: [...(p.movementHistory || []), movement]
-                        };
-                    }
-                    return p;
-                }));
-            }
-
-            async function updateProduct(updated) {
-                setProducts(prev => prev.map(p => {
-                    if (p.id === updated.id) {
-                        let newPriceHistory = p.priceHistory || [];
-                        if (updated.price !== p.price) {
-                            newPriceHistory = [...newPriceHistory, { price: updated.price, date: new Date().toISOString() }];
-                        }
-
-                        let newMovementHistory = p.movementHistory || [];
-                        if (updated.stock !== p.stock) {
-                            const diff = updated.stock - p.stock;
-                            newMovementHistory = [...newMovementHistory, {
-                                qty: Math.abs(diff),
-                                type: diff > 0 ? 'add' : 'consume',
-                                date: new Date().toISOString()
-                            }];
-                        }
-
-                        return { ...updated, priceHistory: newPriceHistory, movementHistory: newMovementHistory };
-                    }
-                    return p;
-                }));
-            }
-
-            useEffect(() => {
-                if (isScanning) {
-                    // Esperar a que el DOM se actualice para encontrar el elemento #reader
-                    const timer = setTimeout(() => {
-                        const html5QrCode = new Html5Qrcode("reader");
-                        html5QrCode.start(
-                            { facingMode: "environment" },
-                            { fps: 10, qrbox: { width: 250, height: 250 } },
-                            (decodedText) => {
-                            try {
-                                const importedData = JSON.parse(decodedText);
-                                if (Array.isArray(importedData)) {
-                                    // Map back minified keys if necessary
-                                    const expanded = importedData.map(p => ({
-                                        id: p.i || p.id,
-                                        name: p.n || p.name,
-                                        stock: p.s !== undefined ? p.s : p.stock,
-                                        min: p.m !== undefined ? p.m : p.min,
-                                        category: p.c || p.category,
-                                        expiry: p.e || p.expiry,
-                                        price: p.p || p.price,
-                                        location: p.l || p.location,
-                                        priceHistory: p.ph || p.priceHistory || [],
-                                        movementHistory: p.mh || p.movementHistory || [],
-                                        createdAt: p.ca || p.createdAt
-                                    }));
-                                    setProducts(expanded);
-                                    stopScanner();
-                                    alert("Inventario sincronizado!");
-                                }
-                            } catch (e) {
-                                console.error("Error parsing QR", e);
-                            }
-                        },
-                        (errorMessage) => {}
-                        ).catch(err => console.error("Error starting scanner", err));
-
-                        window.__qrScanner = html5QrCode;
-                    }, 500);
-                    return () => clearTimeout(timer);
-                }
-            }, [isScanning]);
-
-            function stopScanner() {
-                if (window.__qrScanner) {
-                    window.__qrScanner.stop().then(() => {
-                        setIsScanning(false);
-                    });
-                } else {
-                    setIsScanning(false);
-                }
-            }
-
-            function speak(text, onEnd) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
-                if (onEnd) utterance.onend = onEnd;
-                window.speechSynthesis.speak(utterance);
-            }
-
-            const [auditQueue, setAuditQueue] = useState([]);
-            const [cookingStep, setCookingStep] = useState(-1);
-            const [activeRecipe, setActiveRecipe] = useState(null);
-
-            function parseNumber(str) {
-                const map = { 'uno': 1, 'una': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5 };
-                return map[str] || parseInt(str) || 1;
-            }
-
-            function parseMonth(str) {
-                const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-                const idx = months.indexOf(str.toLowerCase());
-                if (idx === -1) return null;
-                const date = new Date();
-                date.setMonth(idx % 12);
-                if (date < new Date()) date.setFullYear(date.getFullYear() + 1);
-                return date.toISOString().split('T')[0];
-            }
-
-            function startVoiceAssistant(customMsg = null, fillForm = false) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRecognition) {
-                    alert("Speech Recognition not supported in this browser.");
-                    return;
-                }
-
-                setIsFormFillMode(fillForm);
-                const recognition = new SpeechRecognition();
-                recognition.lang = lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : lang === 'en' ? 'en-US' : 'es-ES';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
-
-                recognition.onstart = () => {
-                    setIsListening(true);
-                    setLastCommand('...');
-                };
-
-                recognition.onend = () => setIsListening(false);
-
-                recognition.onerror = (event) => {
-                    console.error("Speech Error:", event.error);
-                    setIsListening(false);
-                    setLastCommand('Error: ' + event.error);
-                };
-
-                recognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript.toLowerCase();
-                    setLastCommand(transcript);
-                    handleVoiceCommand(transcript, fillForm || isFormFillMode);
-                    setTimeout(() => setLastCommand(''), 5000);
-                };
-
-                if (customMsg) {
-                    speak(customMsg, () => {
-                        try { recognition.start(); } catch(e) {}
-                    });
-                } else {
-                    try { recognition.start(); } catch(e) {}
-                }
-            }
-
-            function handleVoiceCommand(cmd, fillForm = false) {
-                console.log("Voice Command:", cmd, "FillForm:", fillForm);
-                const words = cmd.split(' ');
-
-                if (fillForm) {
-                    if (formStep === null) {
-                        const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))) || 1;
-                        const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
-                        const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
-
-                        const unitMap = {
-                            'litros': 'litros', 'liters': 'liters',
-                            'kilos': 'kilos', 'kilo': 'kilos', 'kg': 'kilos',
-                            'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
-                            'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
-                        };
-
-                        let foundUnit = 'unid';
-                        words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
-
-                        const noise = ['añadir', 'agregar', 'add', 'de', 'packs', 'paquetes', 'unidades', 'units'];
-                        const pName = words.slice(startIdx > 0 ? startIdx : 0, endIdx > -1 ? endIdx : words.length)
-                            .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w) && !noise.includes(w))
-                            .join(' ').trim();
-
-                        if (pName) {
-                            const nameEl = document.getElementById('pName');
-                            const stockEl = document.getElementById('pStock');
-                            const unitEl = document.getElementById('pUnit');
-
-                            if (nameEl) nameEl.value = pName.charAt(0).toUpperCase() + pName.slice(1);
-                            if (stockEl) stockEl.value = qty;
-                            if (unitEl) unitEl.value = foundUnit;
-
-                            setFormStep('min');
-                            const msg = lang === 'es' ? `¿Cuál es el stock mínimo para ${pName}?` : `What is the minimum stock for ${pName}?`;
-                            setTimeout(() => startVoiceAssistant(msg, true), 1000);
-                        }
-                    } else if (formStep === 'min') {
-                        const minQty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w)));
-                        const minEl = document.getElementById('pMin');
-                        if (minEl) minEl.value = minQty;
-
-                        setFormStep('expiry');
-                        const msg = lang === 'es' ? "¿Tiene fecha de vencimiento?" : "Does it have an expiry date?";
-                        setTimeout(() => startVoiceAssistant(msg, true), 1000);
-                    } else if (formStep === 'expiry') {
-                        const expEl = document.getElementById('pExpiry');
-                        if (!cmd.includes('no')) {
-                            const expiry = parseMonth(words[words.length - 1]) || '';
-                            if (expEl) expEl.value = expiry;
-                        }
-
-                        setFormStep(null);
-                        setIsFormFillMode(false);
-                        speak(lang === 'es' ? "¡Formulario listo para guardar!" : "Form ready to save!");
-                    }
-                    return;
-                }
-
-                // 1. Auditoría Interactiva (Continuación)
-                if (auditQueue.length > 0) {
-                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','una','dos','tres','one','only'].includes(w)));
-                    const p = auditQueue[0];
-                    updateQty(p.id, qty);
-
-                    let feedback = lang === 'es' ? `Entendido, stock de ${p.name} actualizado a ${qty}` : `Got it, ${p.name} stock updated to ${qty}`;
-                    if (qty <= p.min) {
-                        feedback += lang === 'es' ? " y marcado para comprar." : " and marked for purchase.";
-                    }
-
-                    const nextQueue = auditQueue.slice(1);
-                    setAuditQueue(nextQueue);
-
-                    if (nextQueue.length > 0) {
-                        speak(feedback, () => {
-                            setTimeout(() => startVoiceAssistant(`${lang === 'es' ? '¿Y cuántos quedan de' : 'And how many left of'} ${nextQueue[0].name}?`), 500);
-                        });
-                    } else {
-                        speak(feedback + (lang === 'es' ? ". Auditoría completada." : ". Audit complete."));
-                    }
-                    return;
-                }
-
-                // 2. Control de Recetas
-                if (cmd.includes('cocinar') || cmd.includes('cook') || cmd.includes('receta') || cmd.includes('recipe')) {
-                    const r = recipes.find(rec => cmd.includes(rec.name.toLowerCase()));
-                    if (r) {
-                        setActiveRecipe(r);
-                        setCookingStep(0);
-                        speak(`${lang === 'es' ? 'Iniciando' : 'Starting'} ${r.name}. ${lang === 'es' ? 'Paso 1:' : 'Step 1:'} ${r.instructions[0]}`);
-                        return;
-                    }
-                }
-                if (activeRecipe && (cmd.includes('siguiente') || cmd.includes('next') || cmd.includes('paso') || cmd.includes('step'))) {
-                    const nextStep = cookingStep + 1;
-                    if (nextStep < (activeRecipe.instructions || []).length) {
-                        setCookingStep(nextStep);
-                        speak(`${lang === 'es' ? 'Paso' : 'Step'} ${nextStep + 1}: ${activeRecipe.instructions[nextStep]}`);
-                    } else {
-                        speak(lang === 'es' ? "Receta terminada. ¡Buen provecho!" : "Recipe finished. Enjoy!");
-                        setActiveRecipe(null);
-                        setCookingStep(-1);
-                    }
-                    return;
-                }
-
-                // 3. Conversor de Unidades
-                if (cmd.includes('onzas') || cmd.includes('ounces') || cmd.includes('gramos') || cmd.includes('grams') || cmd.includes('kilos') || cmd.includes('libras') || cmd.includes('pounds')) {
-                    const num = parseFloat(cmd.match(/\d+/));
-                    if (num) {
-                        if (cmd.includes('onza') || cmd.includes('ounce')) {
-                            const res = Math.round(num * 28.35);
-                            speak(`${num} ${lang === 'es' ? 'onzas son' : 'ounces are'} ${res} ${lang === 'es' ? 'gramos' : 'grams'}`);
-                        } else if (cmd.includes('libra') || cmd.includes('pound')) {
-                            const res = (num * 0.453).toFixed(2);
-                            speak(`${num} ${lang === 'es' ? 'libras son' : 'pounds are'} ${res} ${lang === 'es' ? 'kilos' : 'kilos'}`);
-                        } else if (cmd.includes('gramo') || cmd.includes('gram')) {
-                            const res = (num / 28.35).toFixed(1);
-                            speak(`${num} ${lang === 'es' ? 'gramos son' : 'grams are'} ${res} ${lang === 'es' ? 'onzas' : 'ounces'}`);
-                        }
-                        return;
-                    }
-                }
-
-                // 4. Gestión de Productos (Añadir/Quitar/Consultar)
-                const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco'].includes(w))) || 1;
-
-                // Buscar si se menciona algún producto existente
-                const product = products.find(p => cmd.includes(p.name.toLowerCase()));
-
-                if (cmd.includes('añadir') || cmd.includes('comprar') || cmd.includes('agregar') || cmd.includes('add')) {
-                    if (product) {
-                        updateQty(product.id, product.stock + qty);
-                        speak(lang === 'es' ? `Añadido ${qty} a ${product.name}. Nuevo stock: ${product.stock + qty}` : `Added ${qty} to ${product.name}. New stock: ${product.stock + qty}`);
-                    } else {
-                        // Extraer nombre (lo que no sea comando ni número ni unidad)
-                        const unitMap = ['litros','kilos','gramos','unid','unidades','liters','grams','units'];
-                        const noise = ['añadir','comprar','agregar','add','vence','caduca','en'];
-                        const pName = words.filter(w => !noise.includes(w) && isNaN(parseInt(w)) && !unitMap.includes(w) && !['uno','dos','tres'].includes(w)).join(' ').trim();
-                        if (pName) {
-                            addProduct(pName, qty, 1, 'General', '', '', 0, 'Pantry', 'unid');
-                            speak(lang === 'es' ? `Creado nuevo producto: ${pName} con ${qty} unidades.` : `Created new product: ${pName} with ${qty} units.`);
-                        }
-                    }
-                    return;
-                }
-
-                if (cmd.includes('quitar') || cmd.includes('gastar') || cmd.includes('consumir') || cmd.includes('remove') || cmd.includes('spend')) {
-                    if (product) {
-                        const newStock = Math.max(0, product.stock - qty);
-                        updateQty(product.id, newStock);
-                        speak(lang === 'es' ? `Quitado ${qty} de ${product.name}. Quedan ${newStock}` : `Removed ${qty} from ${product.name}. ${newStock} left`);
-                    } else {
-                        speak(lang === 'es' ? "No encontré ese producto para quitar stock." : "I couldn't find that product to remove stock.");
-                    }
-                    return;
-                }
-
-                if (cmd.includes('cuántos') || cmd.includes('quedan') || cmd.includes('tengo') || cmd.includes('consulta') || cmd.includes('información') || cmd.includes('how many') || cmd.includes('left') || cmd.includes('have') || cmd.includes('info')) {
-                    if (product) {
-                        const unitLabel = product.unit === 'unid' ? (lang === 'es' ? 'unidades' : 'units') : product.unit;
-                        speak(lang === 'es' ? `Tienes ${product.stock} ${unitLabel} de ${product.name}.` : `You have ${product.stock} ${unitLabel} of ${product.name}.`);
-                    } else {
-                        // Intentar buscar por coincidencia parcial si no se encontró producto exacto
-                        const partial = products.find(p => p.name.toLowerCase().split(' ').some(w => cmd.includes(w)));
-                        if (partial) {
-                            const unitLabel = partial.unit === 'unid' ? (lang === 'es' ? 'unidades' : 'units') : partial.unit;
-                            speak(lang === 'es' ? `Creo que te refieres a ${partial.name}. Tienes ${partial.stock} ${unitLabel}.` : `I think you mean ${partial.name}. You have ${partial.stock} ${unitLabel}.`);
-                        } else {
-                            speak(lang === 'es' ? "No encontré información sobre ese producto." : "I couldn't find info about that product.");
-                        }
-                    }
-                    return;
-                }
-
-                // 5. Resumen Coach (Resumen Matutino)
-                if (cmd.includes('resumen') || cmd.includes('summary') || cmd.includes('hola') || cmd.includes('hello')) {
-                    const expiring = products.filter(p => p.expiry && new Date(p.expiry) <= new Date());
-                    const low = products.filter(p => p.stock <= p.min);
-
-                    let msg = lang === 'es' ? `Hola ${profileName}. ` : `Hello ${profileName}. `;
-
-                    if (expiring.length > 0) msg += `${lang === 'es' ? 'Atención: vencen hoy' : 'Warning: expiring today'} ${expiring.map(e => e.name).join(', ')}. `;
-                    if (low.length > 0) msg += `${lang === 'es' ? 'Te queda poco de' : 'You are low on'} ${low.map(l => l.name).join(', ')}. `;
-
-                    // Add Health Coach snippet
-                    if (stats.healthAlerts.length > 0) {
-                        msg += `${lang === 'es' ? 'Como tu coach, noto que' : 'As your coach, I notice'} ${stats.healthAlerts[0]}. `;
-                    }
-
-                    // Add Money Leak snippet
-                    if (stats.leaks.length > 0 && stats.leaks[0].cost > 10) {
-                        msg += `${lang === 'es' ? 'Ojo al gasto,' : 'Regarding your budget,'} ${t.leakAlert.replace('este producto', stats.leaks[0].name)}. `;
-                    }
-
-                    if (expiring.length === 0 && low.length === 0 && stats.healthAlerts.length === 0) {
-                        msg += lang === 'es' ? "Tu alacena se ve perfecta hoy." : "Your pantry looks perfect today.";
-                    }
-
-                    speak(msg);
-                    return;
-                }
-
-                // 6. Auditoría: "Chequeo" o "Check"
-                if (cmd.includes('chequeo') || cmd.includes('auditoría') || cmd.includes('audit') || cmd.includes('check')) {
-                    const toAudit = products.filter(p => p.stock > 0).slice(0, 5);
-                    if (toAudit.length > 0) {
-                        setAuditQueue(toAudit);
-                        startVoiceAssistant(`${lang === 'es' ? 'Iniciando chequeo. ¿Cuántos quedan de' : 'Starting audit. How many left of'} ${toAudit[0].name}?`);
-                    } else {
-                        speak(lang === 'es' ? "No hay productos para auditar." : "No products to audit.");
-                    }
-                    return;
-                }
-
-                // Default: Stock query
-                const p = products.find(prod => cmd.includes(prod.name.toLowerCase()));
-                if (p) {
-                    speak(lang === 'es' ? `Quedan ${p.stock} de ${p.name}` : `There are ${p.stock} of ${p.name}`);
-                } else {
-                    speak(lang === 'es' ? "No entendí el comando. Prueba con añadir, resumen o preguntar por un producto." : "I didn't catch that. Try add, summary, or asking about a product.");
-                }
-            }
-
-            function generateQR() {
-                setShowQRModal(true);
-                // Minify data to fit in QR
-                const compact = products.map(p => ({
-                    i: p.id,
-                    n: p.name,
-                    s: p.stock,
-                    m: p.min,
-                    c: p.category,
-                    e: p.expiry,
-                    p: p.price,
-                    l: p.location,
-                    ph: (p.priceHistory || []).slice(-3),
-                    mh: (p.movementHistory || []).slice(-5),
-                    ca: p.createdAt
-                }));
-
-                setTimeout(() => {
-                    const canvas = document.getElementById('qrCanvas');
-                    QRCode.toCanvas(canvas, JSON.stringify(compact), { width: 250 }, (error) => {
-                        if (error) console.error(error);
-                    });
-                }, 100);
-            }
-
-            async function scanTicket() {
-                setIsTicketScanning(true);
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
+            // --- Effects ---
+            useEffect(() => { localStorage.setItem('mialacena_db', JSON.stringify(products)); }, [products]);
+            useEffect(() => { localStorage.setItem('mialacena_profile', JSON.stringify(profile)); }, [profile]);
+            useEffect(() => { localStorage.setItem('mialacena_lang', lang); }, [lang]);
+            useEffect(() => { localStorage.setItem('mialacena_currency', currency); }, [currency]);
+            useEffect(() => { localStorage.setItem('mialacena_dark', darkMode); document.documentElement.classList.toggle('dark', darkMode); }, [darkMode]);
+
+            const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
+
+            // --- Business Logic ---
+            const stats = useMemo(() => {
+                const totalVal = products.reduce((acc, p) => acc + (p.stock * (p.price || 0)), 0);
+                const low = products.filter(p => p.stock <= (p.min || 1)).length;
+                const expiring = products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) < 259200000).length;
+                return { totalVal, low, expiring };
+            }, [products]);
+
+            const addProduct = (p) => { setProducts([...products, { id: Date.now().toString(), createdAt: new Date().toISOString(), ...p }]); showToast(lang === 'es' ? "Añadido" : "Added"); setActiveTab('pantry'); };
+
+            const shareList = () => {
+                const list = products.filter(p => p.stock <= (p.min || 1)).map(p => `- ${p.name} (${p.stock}/${p.min})`).join('\n');
+                if (navigator.share) navigator.share({ title: t.cart, text: list }); else alert(list);
+            };
+
+            const runAIScan = async () => {
+                const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
                 input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) { setIsTicketScanning(false); return; }
-                    try {
-                        const { data: { text } } = await Tesseract.recognize(file, 'spa+eng');
-                        const lines = text.split('\n');
-                        const detected = [];
-                        const blacklist = ['total', 'iva', 'subtotal', 'cambio', 'efectivo', 'tarjeta', 'visa', 'mastercard', 'gracias', 'tienda', 'market', 'super', 'pago', 'cajero', 'fecha', 'hora'];
-
-                        lines.forEach(line => {
-                            // Match: [Name] [Price]
-                            const match = line.match(/([a-zA-Z\s]{3,})\s+(\d+[\.,]\d+)/);
-                            if (match) {
-                                const name = match[1].trim();
-                                const price = parseFloat(match[2].replace(',', '.'));
-                                const isBlacklisted = blacklist.some(word => name.toLowerCase().includes(word));
-                                if (name.length > 3 && !isBlacklisted && price > 0) {
-                                    detected.push({ name, price });
-                                }
-                            }
-                        });
-
-                        if (detected.length > 0) {
-                            const confirmList = detected.map(d => `${d.name}: ${currencySymbol}${d.price}`).join('\n');
-                            if (confirm((lang === 'es' ? '¿Añadir estos productos?\n\n' : 'Add these items?\n\n') + confirmList)) {
-                                detected.forEach(d => addProduct(d.name, 1, 1, 'General', '', '', d.price, 'Pantry', 'unid'));
-                                speak(lang === 'es' ? `Añadidos ${detected.length} productos` : `Added ${detected.length} items`);
-                            }
-                        } else {
-                            alert(lang === 'es' ? "No se detectaron productos claros en el ticket." : "No clear products detected in the ticket.");
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert("Error OCR: " + err.message);
-                    } finally {
-                        setIsTicketScanning(false);
-                    }
-                };
-                input.click();
-            }
-
-            async function runAIScan() {
-                setIsAIScanning(true);
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.capture = 'environment';
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) {
-                        setIsAIScanning(false);
-                        return;
-                    }
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
+                    const file = e.target.files[0]; if (!file) return;
+                    const img = document.createElement('img'); img.src = URL.createObjectURL(file);
                     img.onload = async () => {
-                        try {
-                            const model = await mobilenet.load();
-                            const predictions = await model.classify(img);
-                            if (predictions && predictions.length > 0) {
-                                document.getElementById('pName').value = predictions[0].className.split(',')[0];
-                                speak(lang === 'es' ? `Parece que es ${predictions[0].className}` : `Looks like ${predictions[0].className}`);
-                            }
-                        } catch (err) {
-                            console.error("AI Error:", err);
-                        } finally {
-                            setIsAIScanning(false);
-                        }
+                        try { const model = await mobilenet.load(); const preds = await model.classify(img); if (preds.length > 0) { document.getElementById('pName').value = preds[0].className.split(',')[0]; showToast("Detected!"); } }
+                        catch (err) { showToast("AI Error", "error"); }
                     };
                 };
                 input.click();
-            }
+            };
 
-            async function addProduct(name, stock, min, category, expiry, photo, price, location, unit) {
-                const newProduct = {
-                    id: Date.now().toString(),
-                    name,
-                    stock: parseFloat(stock) || 1,
-                    min: parseFloat(min) || 1,
-                    category: category || 'General',
-                    unit: unit || 'unid',
-                    expiry: expiry || '',
-                    photo: photo || '',
-                    price: parseFloat(price) || 0,
-                    location: location || 'Pantry',
-                    priceHistory: price ? [{ price: parseFloat(price), date: new Date().toISOString() }] : [],
-                    movementHistory: [{ type: 'initial', qty: parseInt(stock) || 1, date: new Date().toISOString() }],
-                    createdAt: new Date().toISOString()
+            const speak = (text, onEnd) => { const u = new SpeechSynthesisUtterance(text); u.lang = lang === 'es' ? 'es-ES' : 'en-US'; if (onEnd) u.onend = onEnd; window.speechSynthesis.speak(u); };
+
+            const startVoice = (msg = null, isForm = false) => {
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRec) return showToast("No mic", "error");
+                const rec = new SpeechRec(); rec.lang = lang === 'es' ? 'es-ES' : 'en-US';
+                rec.onstart = () => setIsListening(true); rec.onend = () => setIsListening(false);
+                rec.onresult = (e) => {
+                    const cmd = e.results[0][0].transcript.toLowerCase();
+                    if (['cancelar', 'stop', 'parar'].includes(cmd)) { setVoiceStep(null); speak("Ok"); return; }
+                    if (isForm) {
+                        if (voiceStep === 'name') { document.getElementById('pName').value = cmd; setVoiceStep('stock'); startVoice(lang === 'es' ? "¿Cuántos?" : "How many?", true); }
+                        else if (voiceStep === 'stock') { document.getElementById('pStock').value = parseInt(cmd)||1; setVoiceStep(null); speak("Listo"); }
+                        else { setVoiceStep('name'); startVoice(lang === 'es' ? "¿Qué producto?" : "Which product?", true); }
+                    } else {
+                        const p = products.find(i => cmd.includes(i.name.toLowerCase()));
+                        if (p) speak(`${p.stock} de ${p.name}`);
+                    }
                 };
-                setProducts(prev => [...prev, newProduct]);
-                setActiveTab('pantry');
-            }
+                if (msg) speak(msg, () => rec.start()); else rec.start();
+            };
+
+            const QRModal = () => (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-pop">
+                    <div className="glass p-10 rounded-4xl text-center max-w-sm w-full">
+                        <h3 className="text-xl font-bold mb-6">QR Sync</h3>
+                        <div id="qr-dest" className="bg-white p-4 rounded-3xl mx-auto mb-6 w-fit"></div>
+                        <button onClick={() => setShowQR(false)} className="w-full p-4 bg-brand text-white rounded-2xl font-bold">Cerrar</button>
+                    </div>
+                </div>
+            );
+
+            useEffect(() => { if(showQR) { const dest = document.getElementById('qr-dest'); if(dest) { dest.innerHTML = ''; new QRCode(dest, { text: JSON.stringify(products.slice(0,10)), width: 200, height: 200 }); } } }, [showQR]);
+
+            // --- Sub-Views ---
+            const PantryView = () => (
+                <div className="flex flex-col gap-6 animate-pop">
+                    <div className="relative"><Icon name="Search" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input type="text" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-4 glass rounded-3xl outline-none focus:ring-4 ring-brand/10 font-medium" /></div>
+                    <div className="grid gap-3">
+                        {products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => (
+                            <div key={p.id} onClick={() => setEditing(p)} className="glass p-4 rounded-4xl flex items-center gap-4 transition-all hover:bg-brand/5 cursor-pointer">
+                                <div className={`w-14 h-14 rounded-3xl flex items-center justify-center text-xl ${CATEGORIES.find(c => c.id === p.category)?.bg || 'bg-slate-100'} ${CATEGORIES.find(c => c.id === p.category)?.color || 'text-slate-400'}`}><Icon name={CATEGORIES.find(c => c.id === p.category)?.icon || 'Package'} /></div>
+                                <div className="flex-1 min-w-0"><h3 className="font-bold truncate">{p.name}</h3><p className="text-xs text-slate-400 font-bold uppercase">{p.stock} Unidades</p>
+                                    <div className="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-700 ${p.stock <= p.min ? 'bg-danger' : 'bg-brand'}`} style={{ width: `${Math.min(100, (p.stock/(p.min*2||1))*100)}%` }}></div></div>
+                                </div>
+                                <Icon name="ChevronRight" className="text-slate-200" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const StatsView = () => {
+                const canvasRef = useRef(null);
+                useEffect(() => { if(canvasRef.current) { new Chart(canvasRef.current, { type: 'doughnut', data: { labels: CATEGORIES.map(c => c.id), datasets: [{ data: CATEGORIES.map(c => products.filter(p => p.category === c.id).length), backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#f59e0b', '#6366f1', '#ec4899'], borderWidth: 0 }] }, options: { cutout: '80%', plugins: { legend: { display: false } } } }); } }, []);
+                return (
+                    <div className="flex flex-col gap-6 animate-pop">
+                        <div className="glass p-8 rounded-4xl flex items-center justify-between">
+                            <div><h2 className="text-3xl font-black text-brand tracking-tighter">{products.length}</h2><p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Items</p>
+                                <div className="mt-4 flex flex-col gap-1">
+                                    {stats.low > 0 && <p className="text-[10px] font-black text-danger uppercase flex items-center gap-1"><Icon name="AlertCircle" size={10} /> {stats.low} {t.lowItems}</p>}
+                                    {stats.expiring > 0 && <p className="text-[10px] font-black text-orange-500 uppercase flex items-center gap-1"><Icon name="Clock" size={10} /> {stats.expiring} {t.expiry}</p>}
+                                </div>
+                            </div>
+                            <div className="chart-container"><canvas ref={canvasRef}></canvas></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="glass p-6 rounded-4xl text-center"><Icon name="Wallet" className="text-secondary mb-2 mx-auto" /><h4 className="text-xl font-black">{currency}{stats.totalVal.toFixed(0)}</h4><p className="text-[10px] font-bold text-slate-400 uppercase">Valor Total</p></div>
+                            <div className="glass p-6 rounded-4xl text-center"><Icon name="Zap" className="text-brand mb-2 mx-auto" /><h4 className="text-xl font-black">{stats.totalVal > 0 ? 'Pro' : 'Start'}</h4><p className="text-[10px] font-bold text-slate-400 uppercase">Estatus</p></div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const AddView = () => {
+                const [selCat, setSelCat] = useState('General');
+                return (
+                    <div className="glass p-8 rounded-4xl flex flex-col gap-5 animate-pop">
+                        <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tight">{t.add}</h2><div className="flex gap-2">
+                            <button onClick={() => startVoice(null, true)} className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isListening ? 'bg-danger text-white animate-pulse' : 'bg-brand/10 text-brand'}`}><Icon name="Mic" /></button>
+                            <button onClick={runAIScan} className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center"><Icon name="Eye" /></button>
+                        </div></div>
+                        <input id="pName" placeholder="Nombre (Ej. Leche)" className="w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none focus:ring-4 ring-brand/10 font-medium" />
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">{CATEGORIES.map(c => <button key={c.id} onClick={() => setSelCat(c.id)} className={`flex-1 min-w-[70px] p-3 rounded-2xl flex flex-col items-center gap-1 transition-all ${selCat === c.id ? 'bg-brand text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-900 text-slate-400'}`}><Icon name={c.icon} size={16} /><span className="text-[9px] font-bold">{c.id}</span></button>)}</div>
+                        <div className="grid grid-cols-2 gap-4"><input id="pStock" type="number" placeholder="Stock" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /><input id="pMin" type="number" placeholder="Min" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /></div>
+                        <div className="grid grid-cols-2 gap-4"><input id="pPrice" type="number" placeholder="Precio" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /><input id="pExpiry" type="date" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium text-xs" /></div>
+                        <button onClick={() => { const n = document.getElementById('pName').value, s = document.getElementById('pStock').value, m = document.getElementById('pMin').value, p = document.getElementById('pPrice').value, e = document.getElementById('pExpiry').value; if(n) addProduct({ name: n, stock: parseFloat(s)||1, min: parseFloat(m)||1, price: parseFloat(p)||0, expiry: e, category: selCat }); }} className="mt-4 p-5 bg-brand text-white rounded-3xl font-black shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"><Icon name="PlusCircle" /> {t.save}</button>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-xl mx-auto min-h-screen px-6 pt-10 pb-32">
+                    {toast && <Toast toast={toast} />}
+                    {showQR && <QRModal />}
+
+                    <header className="flex justify-between items-center mb-10">
+                        <div className="flex items-center gap-4"><div className="w-14 h-14 rounded-3xl bg-brand flex items-center justify-center text-white shadow-xl shadow-emerald-200"><Icon name="Zap" size={28} /></div>
+                        <div><h1 className="text-2xl font-black tracking-tighter text-slate-800 dark:text-white leading-none uppercase">Alacena<span className="text-brand"> Pro</span></h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Inventory</p></div></div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setDarkMode(!darkMode)} className="w-11 h-11 glass rounded-2xl flex items-center justify-center text-slate-400"><Icon name={darkMode ? "Sun" : "Moon"} size={18} /></button>
+                            <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="w-11 h-11 glass rounded-2xl font-bold text-xs text-slate-500 uppercase">{lang}</button>
+                        </div>
+                    </header>
+
+                    {activeTab === 'pantry' && <PantryView />}
+                    {activeTab === 'add' && <AddView />}
+                    {activeTab === 'stats' && <StatsView />}
+                    {activeTab === 'cart' && (
+                        <div className="animate-pop">
+                            <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black">{t.cart}</h2><button onClick={shareList} className="bg-brand text-white px-5 py-2 rounded-2xl text-xs font-black shadow-lg">SHARE 📤</button></div>
+                            <div className="grid gap-3">
+                                {products.filter(p => p.stock <= (p.min || 1)).map(p => (
+                                    <div key={p.id} className="glass p-5 rounded-4xl flex justify-between items-center animate-pop">
+                                        <div className="flex items-center gap-4"><Icon name={CATEGORIES.find(c => c.id === p.category)?.icon || 'Package'} className="text-brand" /><h3 className="font-bold">{p.name}</h3></div>
+                                        <div className="text-right"><p className="text-[10px] font-black text-danger uppercase">Critico</p><p className="font-bold">{p.stock} / {p.min}</p></div>
+                                    </div>
+                                ))}
+                                {products.filter(p => p.stock <= (p.min || 1)).length === 0 && <p className="py-20 text-center text-slate-400 font-bold">✨ Todo en orden</p>}
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'profile' && (
+                        <div className="flex flex-col gap-6 animate-pop">
+                            <div className="glass p-10 rounded-4xl flex flex-col items-center text-center gap-4 relative">
+                                <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 overflow-hidden">{profile.avatar ? <img src={profile.avatar} className="w-full h-full object-cover" /> : <Icon name="User" size={48} />}</div>
+                                <input value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="text-xl font-black bg-transparent text-center border-b border-transparent focus:border-brand outline-none" />
+                                <input placeholder="Avatar URL" value={profile.avatar} onChange={e => setProfile({...profile, avatar: e.target.value})} className="text-[9px] text-slate-400 bg-transparent text-center outline-none w-full" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setCurrency(prompt("Symbol:", currency) || currency)} className="glass p-6 rounded-4xl flex flex-col items-center gap-2"><Icon name="Coins" className="text-secondary" /><span className="text-[10px] font-black uppercase">{t.currency} ({currency})</span></button>
+                                <button onClick={() => setShowQR(true)} className="glass p-6 rounded-4xl flex flex-col items-center gap-2"><Icon name="QrCode" className="text-brand" /><span className="text-[10px] font-black uppercase">Sync QR</span></button>
+                                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="glass p-6 rounded-4xl flex flex-col items-center gap-2 text-danger col-span-2"><Icon name="Trash2" /><span className="text-[10px] font-black uppercase">{t.deleteAll}</span></button>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] glass rounded-4xl p-3 flex justify-around shadow-2xl z-50 border-white/20">
+                        {[ { id: 'pantry', icon: 'LayoutGrid' }, { id: 'stats', icon: 'BarChart3' }, { id: 'add', icon: 'PlusCircle' }, { id: 'cart', icon: 'ShoppingCart' }, { id: 'profile', icon: 'Settings' } ].map(tab => (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`p-3 transition-all duration-300 flex items-center justify-center rounded-2xl ${activeTab === tab.id ? 'bg-brand text-white shadow-xl shadow-emerald-200 -translate-y-2 scale-110' : 'text-slate-300 hover:text-slate-500'}`}><Icon name={tab.icon} size={24} /></button>
+                        ))}
+                    </nav>
+
+                    {editing && (
+                        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-pop">
+                            <div className="glass w-full max-w-sm p-10 rounded-[3rem] shadow-2xl relative border-white/40">
+                                <button onClick={() => setEditing(null)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-danger"><Icon name="X" /></button>
+                                <h2 className="text-2xl font-black mb-8 tracking-tighter">{t.edit}</h2>
+                                <div className="flex flex-col gap-5">
+                                    <input value={editing.name} onChange={e => setEditing({...editing, name: e.target.value})} className="w-full p-4 glass rounded-3xl outline-none font-bold text-lg" />
+                                    <div className="grid grid-cols-2 gap-4"><input type="number" value={editing.stock} onChange={e => setEditing({...editing, stock: parseFloat(e.target.value)||0})} className="p-4 glass rounded-3xl outline-none font-bold" /><input type="number" value={editing.min} onChange={e => setEditing({...editing, min: parseFloat(e.target.value)||0})} className="p-4 glass rounded-3xl outline-none font-bold" /></div>
+                                    <button onClick={() => { setProducts(products.map(p => p.id === editing.id ? editing : p)); setEditing(null); showToast("Ok!"); }} className="mt-4 p-5 bg-brand text-white rounded-3xl font-black shadow-xl shadow-emerald-200 active:scale-95">{t.save}</button>
+                                    <button onClick={() => { setProducts(products.filter(p => p.id !== editing.id)); setEditing(null); }} className="text-danger font-bold text-xs uppercase p-2">{t.delete}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-</body> 
+</body>
 </html>
