@@ -162,6 +162,7 @@
             const [isAIScanning, setIsAIScanning] = useState(false);
             const [isTicketScanning, setIsTicketScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
+            const [isFormFillMode, setIsFormFillMode] = useState(false);
             const [lastCommand, setLastCommand] = useState('');
             const [searchQuery, setSearchQuery] = useState('');
 
@@ -443,7 +444,15 @@
                             </div>
 
                             <div className="flex justify-between items-center px-1">
-                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Mi Alacena</h2>
+                                <div className="flex items-center gap-2">
+                                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-[#0f172a]'}`}>Mi Alacena</h2>
+                                    <button
+                                        onClick={() => setHeatmapMode(!heatmapMode)}
+                                        className={`p-1 rounded-md text-[10px] font-bold uppercase transition-all ${heatmapMode ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}
+                                    >
+                                        {t.heatmap}
+                                    </button>
+                                </div>
                                 <button className="text-primary text-sm font-bold">{t.seeAll}</button>
                             </div>
 
@@ -542,6 +551,13 @@
                                         className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
                                      >
                                         {isTicketScanning ? '⌛' : '🧾'}
+                                     </button>
+                                     <button
+                                        onClick={() => startVoiceAssistant(null, true)}
+                                        title="Voz a Formulario"
+                                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600'}`}
+                                     >
+                                        <span className="material-symbols-rounded">mic</span>
                                      </button>
                                  </div>
                                  <div className="flex gap-2">
@@ -1297,13 +1313,14 @@
                 return date.toISOString().split('T')[0];
             }
 
-            function startVoiceAssistant(customMsg = null) {
+            function startVoiceAssistant(customMsg = null, fillForm = false) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRecognition) {
                     alert("Speech Recognition not supported in this browser.");
                     return;
                 }
 
+                setIsFormFillMode(fillForm);
                 const recognition = new SpeechRecognition();
                 recognition.lang = lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : lang === 'en' ? 'en-US' : 'es-ES';
                 recognition.interimResults = false;
@@ -1325,7 +1342,7 @@
                 recognition.onresult = (event) => {
                     const transcript = event.results[0][0].transcript.toLowerCase();
                     setLastCommand(transcript);
-                    handleVoiceCommand(transcript);
+                    handleVoiceCommand(transcript, isFormFillMode);
                     setTimeout(() => setLastCommand(''), 5000);
                 };
 
@@ -1338,9 +1355,50 @@
                 }
             }
 
-            function handleVoiceCommand(cmd) {
-                console.log("Voice Command:", cmd);
+            function handleVoiceCommand(cmd, fillForm = false) {
+                console.log("Voice Command:", cmd, "FillForm:", fillForm);
                 const words = cmd.split(' ');
+
+                if (fillForm) {
+                    const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))) || 1;
+                    const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
+                    const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
+
+                    const unitMap = {
+                        'litros': 'litros', 'liters': 'liters',
+                        'kilos': 'kilos', 'kilo': 'kilos', 'kg': 'kilos',
+                        'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
+                        'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
+                    };
+
+                    let foundUnit = 'unid';
+                    words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
+
+                    const pName = words.slice(startIdx > 0 ? startIdx : 0, endIdx > -1 ? endIdx : words.length)
+                        .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))
+                        .join(' ').trim();
+
+                    let expiry = '';
+                    if (endIdx > -1) {
+                        expiry = parseMonth(words[words.length - 1]) || '';
+                    }
+
+                    if (pName) {
+                        const nameEl = document.getElementById('pName');
+                        const stockEl = document.getElementById('pStock');
+                        const expEl = document.getElementById('pExpiry');
+                        const unitEl = document.getElementById('pUnit');
+
+                        if (nameEl) nameEl.value = pName.charAt(0).toUpperCase() + pName.slice(1);
+                        if (stockEl) stockEl.value = qty;
+                        if (expEl) expEl.value = expiry;
+                        if (unitEl) unitEl.value = foundUnit;
+
+                        speak(lang === 'es' ? `Rellenado: ${pName}` : `Filled: ${pName}`);
+                    }
+                    setIsFormFillMode(false);
+                    return;
+                }
 
                 // 1. Auditoría Interactiva (Continuación)
                 if (auditQueue.length > 0) {
