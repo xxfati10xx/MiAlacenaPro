@@ -1396,13 +1396,26 @@
                     }
                 }
 
-                // 4. Entrada Rápida: "Añadir [n] [prod] vence en [mes]"
+                // 4. Entrada Rápida: "Añadir [n] [unid] [prod] vence en [mes]"
                 if (cmd.includes('añadir') || cmd.includes('agregar') || cmd.includes('add')) {
                     const words = cmd.split(' ');
                     const qty = parseNumber(words.find(w => !isNaN(parseInt(w)) || ['uno','dos','tres','four','five'].includes(w)));
                     const startIdx = words.findIndex(w => ['añadir', 'agregar', 'add'].includes(w)) + 1;
                     const endIdx = words.findIndex(w => ['vence', 'caduca', 'expires', 'expiry'].includes(w));
-                    const pName = words.slice(startIdx, endIdx > -1 ? endIdx : words.length).join(' ').replace(/litros|kilos|paquetes|unidades|liters|kilos|units|packages/g, '').trim();
+
+                    const unitMap = {
+                        'litros': 'litros', 'litros': 'litros', 'liters': 'liters',
+                        'kilos': 'kilos', 'kilo': 'kilos', 'kilogramos': 'kilos', 'kg': 'kilos',
+                        'gramos': 'gramos', 'gr': 'gramos', 'grams': 'grams',
+                        'mililitros': 'ml', 'ml': 'ml', 'milliliters': 'ml'
+                    };
+
+                    let foundUnit = 'unid';
+                    words.forEach(w => { if(unitMap[w]) foundUnit = unitMap[w]; });
+
+                    const pName = words.slice(startIdx, endIdx > -1 ? endIdx : words.length)
+                        .filter(w => !unitMap[w] && isNaN(parseInt(w)) && !['uno','dos','tres','cuatro','cinco','one','two','three','four','five'].includes(w))
+                        .join(' ').trim();
 
                     let expiry = '';
                     if (endIdx > -1) {
@@ -1410,8 +1423,8 @@
                     }
 
                     if (pName) {
-                        addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry', 'unid');
-                        speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${pName}` + (expiry ? ` ${lang === 'es' ? 'que vence en' : 'expiring in'} ${words[words.length-1]}` : ''));
+                        addProduct(pName, qty, 1, 'General', expiry, '', 0, 'Pantry', foundUnit);
+                        speak(`${lang === 'es' ? 'Añadido' : 'Added'} ${qty} ${foundUnit} ${pName}` + (expiry ? ` ${lang === 'es' ? 'que vence en' : 'expiring in'} ${words[words.length-1]}` : ''));
                         return;
                     }
                 }
