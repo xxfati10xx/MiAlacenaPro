@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style> 
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'); 
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; } 
@@ -29,8 +31,8 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos', editTitle: 'Actualizar Compra', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo Mínimo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal' },
-            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products', editTitle: 'Update Purchase', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total Value', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Under Minimum', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation' },
+            es: { title: 'MiAlacena', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Perfil', stats: 'Stats', stock: 'Stock', loading: 'Iniciando...', loginSub: 'Tu inventario inteligente.', addProductTitle: 'Añadir Producto', placeholderName: 'Ej. Leche', saveBtn: 'Guardar', logout: 'Cerrar Sesión', share: 'Compartir', expiry: 'Caducidad', category: 'Categoría', search: 'Buscar...', empty: 'No hay productos', editTitle: 'Actualizar Compra', stockActual: 'Stock Actual', minimum: 'Mínimo', deleteBtn: 'Eliminar', productLabel: 'Producto', photoUrl: 'URL Foto (Opcional)', confirmDelete: '¿Eliminar producto?', deleteAll: 'Borrar Todo', confirmDeleteAll: '¿Borrar todos los datos locales?', allClear: '✨ Todo en orden', catGeneral: 'General', catDairy: 'Lácteos', catMeat: 'Carnes', catProduce: 'Frutas/Verduras', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Precio', location: 'Ubicación', locFridge: 'Refrigerador', locFreezer: 'Congelador', locPantry: 'Alacena Principal', locOther: 'Otro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdicio', consumptionFreq: 'Frecuencia de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Más Usados', outOfStock: 'Agotados', avgLife: 'Vida Útil Promedio', statStock: 'Gestión de Stock', statWaste: 'Control de Desperdicio', statFinance: 'Finanzas y Gastos', statHabits: 'Uso y Hábitos', days: 'días', recipes: 'Recetas', recipeCoverage: 'Cobertura de Recetas', underMin: 'Bajo Mínimo', priceHistory: 'Historial de Precios', wasteBtn: 'Marcar como Desperdicio', suggestions: 'Sugerencias', noData: 'Sin datos', qrSync: 'QR Sync (Sin Nube)', qrScanner: 'Escanear QR', qrGenerate: 'Generar QR', voiceAssistant: 'Asistente de Voz', heatmap: 'Heatmap FIFO', inflation: 'Inflación Personal', unit: 'Unidad', uUnit: 'unid', uLiters: 'litros', uGrams: 'gramos', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'Predicción IA', aiScan: 'IA Scan', aiAnalyzing: 'Analizando...' },
+            en: { title: 'MyPantry', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', stock: 'Stock', loading: 'Loading...', loginSub: 'Your smart inventory.', addProductTitle: 'Add Product', placeholderName: 'e.g. Milk', saveBtn: 'Save', logout: 'Logout', share: 'Share', expiry: 'Expiry', category: 'Category', search: 'Search...', empty: 'No products', editTitle: 'Update Purchase', stockActual: 'Current Stock', minimum: 'Minimum', deleteBtn: 'Delete', productLabel: 'Product', photoUrl: 'Photo URL (Optional)', confirmDelete: 'Delete product?', deleteAll: 'Clear All', confirmDeleteAll: 'Delete all local data?', allClear: '✨ All clear', catGeneral: 'General', catDairy: 'Dairy', catMeat: 'Meats', catProduce: 'Fruits/Veg', catPantry: 'Pantry', catDrinks: 'Drinks', catCleaning: 'Cleaning', catHygiene: 'Hygiene', price: 'Price', location: 'Location', locFridge: 'Refrigerator', locFreezer: 'Freezer', locPantry: 'Main Pantry', locOther: 'Other', totalValue: 'Total Value', wasteIndex: 'Waste Index', consumptionFreq: 'Consumption Frequency', nextPurchase: 'Next Purchase', topUsed: 'Top Used', outOfStock: 'Out of Stock', avgLife: 'Avg. Life', statStock: 'Stock Management', statWaste: 'Waste Control', statFinance: 'Finance & Expenses', statHabits: 'Usage & Habits', days: 'days', recipes: 'Recipes', recipeCoverage: 'Recipe Coverage', underMin: 'Under Minimum', priceHistory: 'Price History', wasteBtn: 'Mark as Waste', suggestions: 'Suggestions', noData: 'No data', qrSync: 'QR Sync (No Cloud)', qrScanner: 'Scan QR', qrGenerate: 'Generate QR', voiceAssistant: 'Voice Assistant', heatmap: 'FIFO Heatmap', inflation: 'Personal Inflation', unit: 'Unit', uUnit: 'unit', uLiters: 'liters', uGrams: 'grams', uKilos: 'kilos', uMilliliters: 'ml', aiPrediction: 'AI Prediction', aiScan: 'AI Scan', aiAnalyzing: 'Analyzing...' },
             pt: { title: 'MinhaDespensa', pantry: 'Despensa', add: 'Adicionar', cart: 'Carrinho', profile: 'Perfil', stats: 'Estatísticas', stock: 'Estoque', loading: 'Iniciando...', loginSub: 'Seu inventário inteligente.', addProductTitle: 'Adicionar Produto', placeholderName: 'Ex. Leite', saveBtn: 'Salvar', logout: 'Sair', share: 'Compartilhar', expiry: 'Validade', category: 'Categoria', search: 'Procurar...', empty: 'Nenhum produto', editTitle: 'Atualizar Compra', stockActual: 'Estoque Atual', minimum: 'Mínimo', deleteBtn: 'Excluir', productLabel: 'Produto', photoUrl: 'URL da Foto (Opcional)', confirmDelete: 'Excluir producto?', deleteAll: 'Apagar Tudo', confirmDeleteAll: 'Apagar todos os dados locais?', allClear: '✨ Tudo em ordem', catGeneral: 'Geral', catDairy: 'Laticínios', catMeat: 'Carnes', catProduce: 'Frutas/Legumes', catPantry: 'Despensa', catDrinks: 'Bebidas', catCleaning: 'Limpieza', catHygiene: 'Higiene', price: 'Preço', location: 'Localização', locFridge: 'Frigorífico', locFreezer: 'Congelador', locPantry: 'Despensa Principal', locOther: 'Outro', totalValue: 'Valor Total', wasteIndex: 'Índice de Desperdício', consumptionFreq: 'Frequência de Consumo', nextPurchase: 'Próxima Compra', topUsed: 'Mais Usados', outOfStock: 'Esgotados', avgLife: 'Vida Útil Média', statStock: 'Gestão de Estoque', statWaste: 'Controle de Desperdício', statFinance: 'Finanças e Gastos', statHabits: 'Uso e Hábitos', days: 'dias', recipes: 'Receitas', recipeCoverage: 'Cobertura de Receitas', underMin: 'Abaixo do Mínimo', priceHistory: 'Histórico de Preços', wasteBtn: 'Marcar como Desperdício', suggestions: 'Sugestões', noData: 'Sem dados' },
             it: { title: 'MiaDispensa', pantry: 'Dispensa', add: 'Aggiungi', cart: 'Carrello', profile: 'Profilo', stats: 'Statistiche', stock: 'Scorta', loading: 'Inizializzazione...', loginSub: 'Il tuo inventario inteligente.', addProductTitle: 'Aggiungi Prodotto', placeholderName: 'Es. Latte', saveBtn: 'Salva', logout: 'Esci', share: 'Condividi', expiry: 'Scadenza', category: 'Categoria', search: 'Cerca...', empty: 'Nessun prodotto', editTitle: 'Aggiorna Acquisto', stockActual: 'Scorta Attuale', minimum: 'Minimo', deleteBtn: 'Elimina', productLabel: 'Prodotto', photoUrl: 'URL Foto (Opzionale)', confirmDelete: 'Elimina prodotto?', deleteAll: 'Cancella Tutto', confirmDeleteAll: 'Cancellare tutti i dati locali?', allClear: '✨ Tutto a posto', catGeneral: 'Generale', catDairy: 'Latticini', catMeat: 'Carne', catProduce: 'Frutta/Verdura', catPantry: 'Dispensa', catDrinks: 'Bevande', catCleaning: 'Pulizia', catHygiene: 'Igiene', price: 'Prezzo', location: 'Posizione', locFridge: 'Frigorifero', locFreezer: 'Congelatore', locPantry: 'Dispensa Principale', locOther: 'Altro', totalValue: 'Valore Totale', wasteIndex: 'Indice di Spreco', consumptionFreq: 'Frequenza di Consumo', nextPurchase: 'Prossimo Acquisto', topUsed: 'Più Usati', outOfStock: 'Esauriti', avgLife: 'Vita Media', statStock: 'Gestione Scorte', statWaste: 'Controllo Sprechi', statFinance: 'Finanza e Spese', statHabits: 'Uso e Abitudini', days: 'giorni', recipes: 'Ricette', recipeCoverage: 'Copertura Ricette', underMin: 'Sotto Minimo', priceHistory: 'Cronologia Prezzi', wasteBtn: 'Segna come Spreco', suggestions: 'Suggerimenti', noData: 'Nessun dato' },
             fr: { title: 'MonGardeManger', pantry: 'Pantry', add: 'Ajouter', cart: 'Panier', profile: 'Profil', stats: 'Stats', stock: 'Stock', loading: 'Démarrage...', loginSub: 'Votre inventaire intelligent.', addProductTitle: 'Ajouter un Produit', placeholderName: 'Ex. Lait', saveBtn: 'Enregistrer', logout: 'Déconnexion', share: 'Partager', expiry: 'Expiration', category: 'Catégorie', search: 'Chercher...', empty: 'Aucun produit', editTitle: 'Mettre à jour', stockActual: 'Stock Actuel', minimum: 'Minimum', deleteBtn: 'Supprimer', productLabel: 'Produit', photoUrl: 'URL Photo (Optionnel)', confirmDelete: 'Supprimer le produit?', deleteAll: 'Tout effacer', confirmDeleteAll: 'Effacer toutes les données locales?', allClear: '✨ Tout est en ordre', catGeneral: 'Général', catDairy: 'Laitage', catMeat: 'Viandes', catProduce: 'Fruits/Légumes', catPantry: 'Épicerie', catDrinks: 'Boissons', catCleaning: 'Nettoyage', catHygiene: 'Hygiène', price: 'Prix', location: 'Emplacement', locFridge: 'Réfrigérateur', locFreezer: 'Congélateur', locPantry: 'Garde-manger Principal', locOther: 'Autre', totalValue: 'Valeur Totale', wasteIndex: 'Indice de Gaspillage', consumptionFreq: 'Fréquence de Consommation', nextPurchase: 'Prochain Achat', topUsed: 'Plus Utilisés', outOfStock: 'Épuisés', avgLife: 'Durée de Vie Moyenne', statStock: 'Gestion des Stocks', statWaste: 'Contrôle du Gaspillage', statFinance: 'Finances et Dépenses', statHabits: 'Usage et Habitudes', days: 'jours', recipes: 'Recettes', recipeCoverage: 'Couverture des Recettes', underMin: 'Sous le Minimum', priceHistory: 'Historique des Prix', wasteBtn: 'Marquer comme Gaspillage', suggestions: 'Suggestions', noData: 'Pas de données' },
@@ -85,6 +87,7 @@
             const [showQRModal, setShowQRModal] = useState(false);
             const [qrData, setQrData] = useState('');
             const [isScanning, setIsScanning] = useState(false);
+            const [isAIScanning, setIsAIScanning] = useState(false);
             const [isListening, setIsListening] = useState(false);
             const [lastCommand, setLastCommand] = useState('');
 
@@ -110,6 +113,38 @@
 
             const stats = (() => {
                 const now = new Date();
+                const predictions = {};
+
+                // TF.js Regression for Depletion Prediction
+                products.forEach(p => {
+                    const consumes = (p.movementHistory || []).filter(m => m.type === 'consume');
+                    if (consumes.length >= 3) {
+                        // Simple Linear Regression: x = days since created, y = total consumed
+                        const data = consumes.map(m => ({
+                            x: (new Date(m.date) - new Date(p.createdAt)) / (1000*60*60*24),
+                            y: m.qty
+                        }));
+
+                        const avgX = data.reduce((a, b) => a + b.x, 0) / data.length;
+                        const avgY = data.reduce((a, b) => a + b.y, 0) / data.length;
+
+                        let num = 0, den = 0;
+                        data.forEach(d => {
+                            num += (d.x - avgX) * (d.y - avgY);
+                            den += (d.x - avgX) ** 2;
+                        });
+
+                        const slope = den === 0 ? 0 : num / den; // Consumption per day
+                        if (slope > 0) {
+                            const daysLeft = p.stock / slope;
+                            predictions[p.id] = {
+                                days: Math.max(0, daysLeft).toFixed(1),
+                                date: new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000).toLocaleDateString(lang, {month:'short', day:'numeric'})
+                            };
+                        }
+                    }
+                });
+
                 const totalValue = products.reduce((acc, p) => acc + (p.stock * (p.price || 0)), 0);
 
                 const underMin = products.filter(p => p.stock <= p.min && p.stock > 0);
@@ -209,7 +244,7 @@
                 });
                 const personalInflation = inflationCount > 0 ? (totalInflation / inflationCount).toFixed(1) : 0;
 
-                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation };
+                return { totalValue, underMin, outOfStock, categoryStats, locationStats, wasteIndex, recipeCoverage, topUsed, frequencyData, suggestions, categoryAvgLife, personalInflation, predictions };
             })();
 
             if (loading) return (
@@ -278,7 +313,7 @@
                                         </div>
                                         <div>
                                             <h3 onClick={() => setEditingProduct(p)} className={`font-bold cursor-pointer hover:text-emerald-500 transition-colors ${darkMode ? 'text-slate-100' : 'text-slate-700'}`}>{p.name}</h3>
-                                            <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>{t.stock}: {p.stock}</p>
+                                            <p className={`text-xs ${p.stock <= p.min ? 'text-red-500 font-bold' : 'text-slate-400'}`}>{t.stock}: {p.stock} {p.unit || t.uUnit}</p>
                                             {p.expiry && (
                                                 <div className="flex items-center gap-1 mt-1">
                                                     <span className="text-[10px] uppercase font-bold text-slate-400">{t.expiry}:</span>
@@ -288,6 +323,12 @@
                                                     }`}>
                                                         {new Date(p.expiry).toLocaleDateString(lang)}
                                                     </span>
+                                                </div>
+                                            )}
+                                            {stats.predictions[p.id] && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="text-[10px] uppercase font-bold text-emerald-500">🤖 {t.aiPrediction}:</span>
+                                                    <span className="text-[10px] font-bold text-emerald-600">{stats.predictions[p.id].date}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -303,10 +344,18 @@
                         <div className={`animate-pop p-6 rounded-[2.5rem] shadow-xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
                              <h2 className="text-xl font-bold mb-4">{t.addProductTitle}</h2>
                              <div className="grid gap-3">
-                                 <input id="pName" type="text" placeholder={t.placeholderName} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
                                  <div className="flex gap-2">
-                                     <input id="pStock" type="number" placeholder={t.stock} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
-                                     <input id="pMin" type="number" placeholder="Min" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <input id="pName" type="text" placeholder={t.placeholderName} className={`flex-1 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <button
+                                        onClick={() => runAIScan()}
+                                        className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner active:scale-95 transition-all"
+                                     >
+                                        {isAIScanning ? '⌛' : '👁️'}
+                                     </button>
+                                 </div>
+                                 <div className="flex gap-2">
+                                     <input id="pStock" type="number" step="any" placeholder={t.stock} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                     <input id="pMin" type="number" step="any" placeholder="Min" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
                                  </div>
                                  <div className="flex gap-2">
                                      <input id="pPrice" type="number" step="0.01" placeholder={t.price} className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
@@ -314,11 +363,21 @@
                                          {['Pantry', 'Fridge', 'Freezer', 'Other'].map(l => <option key={l} value={l}>{getLocationLabel(l)}</option>)}
                                      </select>
                                  </div>
-                                 <select id="pCat" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
-                                     {['General', 'Lácteos', 'Carnes', 'Frutas/Verduras', 'Despensa', 'Bebidas', 'Limpieza', 'Higiene'].map(c => <option key={c} value={c}>{getCategoryLabel(c)}</option>)}
-                                 </select>
+                                 <div className="flex gap-2">
+                                     <select id="pCat" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
+                                         {['General', 'Lácteos', 'Carnes', 'Frutas/Verduras', 'Despensa', 'Bebidas', 'Limpieza', 'Higiene'].map(c => <option key={c} value={c}>{getCategoryLabel(c)}</option>)}
+                                     </select>
+                                     <select id="pUnit" className={`w-1/2 p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`}>
+                                         {['unid', 'litros', 'gramos', 'kilos', 'ml'].map(u => <option key={u} value={u}>{t['u' + u.charAt(0).toUpperCase() + u.slice(1).replace('unid','Unit').replace('ml','Milliliters')] || u}</option>)}
+                                     </select>
+                                 </div>
                                  <input id="pExpiry" type="date" className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
                                  <input id="pPhoto" type="text" placeholder={t.photoUrl} className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}`} />
+                                 {isAIScanning && (
+                                     <div className="text-[10px] font-bold text-emerald-600 animate-pulse ml-2">
+                                         {t.aiAnalyzing}
+                                     </div>
+                                 )}
                                  <button onClick={() => {
                                      const name = document.getElementById('pName').value;
                                      const stock = document.getElementById('pStock').value;
@@ -328,7 +387,8 @@
                                      const photo = document.getElementById('pPhoto').value;
                                      const price = document.getElementById('pPrice').value;
                                      const loc = document.getElementById('pLoc').value;
-                                     if(name) addProduct(name, stock, min, cat, exp, photo, price, loc);
+                                     const unit = document.getElementById('pUnit').value;
+                                     if(name) addProduct(name, stock, min, cat, exp, photo, price, loc, unit);
                                  }} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 mt-2">{t.saveBtn}</button>
                              </div>
                         </div>
@@ -623,19 +683,21 @@
                                             <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.stockActual}</label>
                                             <input
                                                 type="number"
+                                                step="any"
                                                 value={editingProduct.stock}
-                                                onChange={(e) => setEditingProduct({...editingProduct, stock: parseInt(e.target.value) || 0})}
+                                                onChange={(e) => setEditingProduct({...editingProduct, stock: parseFloat(e.target.value) || 0})}
                                                 className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.minimum}</label>
-                                            <input
-                                                type="number"
-                                                value={editingProduct.min}
-                                                onChange={(e) => setEditingProduct({...editingProduct, min: parseInt(e.target.value) || 0})}
+                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.unit}</label>
+                                            <select
+                                                value={editingProduct.unit || 'unid'}
+                                                onChange={(e) => setEditingProduct({...editingProduct, unit: e.target.value})}
                                                 className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
-                                            />
+                                            >
+                                                {['unid', 'litros', 'gramos', 'kilos', 'ml'].map(u => <option key={u} value={u}>{t['u' + u.charAt(0).toUpperCase() + u.slice(1).replace('unid','Unit').replace('ml','Milliliters')] || u}</option>)}
+                                            </select>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">
@@ -649,6 +711,17 @@
                                                 className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
                                             />
                                         </div>
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.minimum}</label>
+                                            <input
+                                                type="number"
+                                                value={editingProduct.min}
+                                                onChange={(e) => setEditingProduct({...editingProduct, min: parseFloat(e.target.value) || 0})}
+                                                className={`w-full p-4 rounded-2xl outline-none focus:ring-2 ring-emerald-400 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
                                         <div className="flex-1">
                                             <label className="text-xs font-bold uppercase text-slate-400 ml-2">{t.location}</label>
                                             <select
@@ -1040,13 +1113,46 @@
                 }, 100);
             }
 
-            async function addProduct(name, stock, min, category, expiry, photo, price, location) {
+            async function runAIScan() {
+                setIsAIScanning(true);
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        setIsAIScanning(false);
+                        return;
+                    }
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.onload = async () => {
+                        try {
+                            const model = await mobilenet.load();
+                            const predictions = await model.classify(img);
+                            if (predictions && predictions.length > 0) {
+                                document.getElementById('pName').value = predictions[0].className.split(',')[0];
+                                speak(lang === 'es' ? `Parece que es ${predictions[0].className}` : `Looks like ${predictions[0].className}`);
+                            }
+                        } catch (err) {
+                            console.error("AI Error:", err);
+                        } finally {
+                            setIsAIScanning(false);
+                        }
+                    };
+                };
+                input.click();
+            }
+
+            async function addProduct(name, stock, min, category, expiry, photo, price, location, unit) {
                 const newProduct = {
                     id: Date.now().toString(),
                     name,
-                    stock: parseInt(stock) || 1,
-                    min: parseInt(min) || 1,
+                    stock: parseFloat(stock) || 1,
+                    min: parseFloat(min) || 1,
                     category: category || 'General',
+                    unit: unit || 'unid',
                     expiry: expiry || '',
                     photo: photo || '',
                     price: parseFloat(price) || 0,
