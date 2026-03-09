@@ -6,7 +6,7 @@
     <title>MiAlacena Pro | Smart Inventory</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#10b981">
-
+    
     <!-- Scripts & Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,38 +14,32 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-
+    
     <style>
         :root { --brand: #10b981; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4); }
         .dark .glass { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); }
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .chart-container { position: relative; margin: auto; height: 160px; width: 160px; }
-        .tab-active { @apply bg-brand text-white shadow-xl shadow-emerald-200 -translate-y-2 scale-110; }
-        input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; filter: invert(0.5); }
     </style>
-
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: { brand: '#10b981', secondary: '#3b82f6', danger: '#ef4444', surface: '#f8fafc' },
-                    borderRadius: { '4xl': '2rem', '5xl': '3rem' }
+                    borderRadius: { '4xl': '2rem' }
                 }
             }
         }
@@ -53,6 +47,250 @@
 </head>
 <body class="bg-surface dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-500">
     <div id="root"></div>
-    <script type="text/babel" src="App.tsx"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef, Fragment } = React;
+
+        const CATEGORIES = [
+            { id: 'General', icon: 'Package', color: 'text-slate-500', bg: 'bg-slate-100' },
+            { id: 'Lácteos', icon: 'Milk', color: 'text-blue-500', bg: 'bg-blue-50' },
+            { id: 'Carnes', icon: 'Beef', color: 'text-red-500', bg: 'bg-red-50' },
+            { id: 'Frutas', icon: 'Apple', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+            { id: 'Despensa', icon: 'Store', color: 'text-orange-500', bg: 'bg-orange-50' },
+            { id: 'Bebidas', icon: 'GlassWater', color: 'text-indigo-500', bg: 'bg-indigo-50' }
+        ];
+
+        const TRANSLATIONS = {
+            es: { title: 'MiAlacena Pro', pantry: 'Alacena', add: 'Añadir', cart: 'Carrito', profile: 'Ajustes', stats: 'Estadísticas', search: 'Buscar...', empty: 'Vacío', save: 'Guardar', delete: 'Eliminar', edit: 'Detalle', language: 'Idioma', currency: 'Divisa', export: 'Exportar', import: 'Importar', deleteAll: 'Borrar Todo', greeting: 'Hola', statsStock: 'Estado Stock', lowItems: 'Bajos', expiry: 'Vencen', health: 'Salud Despensa', share: 'Compartir Lista' },
+            en: { title: 'MyPantry Pro', pantry: 'Pantry', add: 'Add', cart: 'Cart', profile: 'Profile', stats: 'Stats', search: 'Search...', empty: 'Empty', save: 'Save', delete: 'Delete', edit: 'Detail', language: 'Language', currency: 'Currency', export: 'Export', import: 'Import', deleteAll: 'Clear All', greeting: 'Hello', statsStock: 'Stock Status', lowItems: 'Low', expiry: 'Expiry', health: 'Pantry Health', share: 'Share List' }
+        };
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => { if (iconRef.current && lucide[name]) lucide.createIcons({ targets: [iconRef.current], icons: { [name]: lucide[name] } }); }, [name]);
+            return <i ref={iconRef} data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        const Toast = ({ msg, type = 'success' }) => (
+            <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl shadow-2xl animate-pop flex items-center gap-3 font-bold text-sm text-white ${type === 'error' ? 'bg-danger' : 'bg-brand'}`}>
+                <Icon name={type === 'error' ? 'AlertCircle' : 'CheckCircle'} size={18} /> {msg}
+            </div>
+        );
+
+        function App() {
+            // --- State ---
+            const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('mialacena_db') || '[]'));
+            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mialacena_profile') || '{"name":"User","avatar":""}'));
+            const [lang, setLang] = useState(() => localStorage.getItem('mialacena_lang') || 'es');
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('mialacena_dark') === 'true');
+            const [currency, setCurrency] = useState(() => localStorage.getItem('mialacena_currency') || '$');
+            const [activeTab, setActiveTab] = useState('pantry');
+            const [search, setSearch] = useState('');
+            const [editing, setEditing] = useState(null);
+            const [toast, setToast] = useState(null);
+            const [isListening, setIsListening] = useState(false);
+            const [voiceStep, setVoiceStep] = useState(null);
+            const [showQR, setShowQR] = useState(false);
+
+            const t = TRANSLATIONS[lang] || TRANSLATIONS.es;
+
+            // --- Effects ---
+            useEffect(() => { localStorage.setItem('mialacena_db', JSON.stringify(products)); }, [products]);
+            useEffect(() => { localStorage.setItem('mialacena_profile', JSON.stringify(profile)); }, [profile]);
+            useEffect(() => { localStorage.setItem('mialacena_lang', lang); }, [lang]);
+            useEffect(() => { localStorage.setItem('mialacena_currency', currency); }, [currency]);
+            useEffect(() => { localStorage.setItem('mialacena_dark', darkMode); document.documentElement.classList.toggle('dark', darkMode); }, [darkMode]);
+
+            const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
+
+            // --- Business Logic ---
+            const stats = useMemo(() => {
+                const totalVal = products.reduce((acc, p) => acc + (p.stock * (p.price || 0)), 0);
+                const low = products.filter(p => p.stock <= (p.min || 1)).length;
+                const expiring = products.filter(p => p.expiry && (new Date(p.expiry) - new Date()) < 259200000).length;
+                return { totalVal, low, expiring };
+            }, [products]);
+
+            const addProduct = (p) => { setProducts([...products, { id: Date.now().toString(), createdAt: new Date().toISOString(), ...p }]); showToast(lang === 'es' ? "Añadido" : "Added"); setActiveTab('pantry'); };
+            
+            const shareList = () => {
+                const list = products.filter(p => p.stock <= (p.min || 1)).map(p => `- ${p.name} (${p.stock}/${p.min})`).join('\n');
+                if (navigator.share) navigator.share({ title: t.cart, text: list }); else alert(list);
+            };
+
+            const runAIScan = async () => {
+                const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0]; if (!file) return;
+                    const img = document.createElement('img'); img.src = URL.createObjectURL(file);
+                    img.onload = async () => {
+                        try { const model = await mobilenet.load(); const preds = await model.classify(img); if (preds.length > 0) { document.getElementById('pName').value = preds[0].className.split(',')[0]; showToast("Detected!"); } }
+                        catch (err) { showToast("AI Error", "error"); }
+                    };
+                };
+                input.click();
+            };
+
+            const speak = (text, onEnd) => { const u = new SpeechSynthesisUtterance(text); u.lang = lang === 'es' ? 'es-ES' : 'en-US'; if (onEnd) u.onend = onEnd; window.speechSynthesis.speak(u); };
+            
+            const startVoice = (msg = null, isForm = false) => {
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRec) return showToast("No mic", "error");
+                const rec = new SpeechRec(); rec.lang = lang === 'es' ? 'es-ES' : 'en-US';
+                rec.onstart = () => setIsListening(true); rec.onend = () => setIsListening(false);
+                rec.onresult = (e) => {
+                    const cmd = e.results[0][0].transcript.toLowerCase();
+                    if (['cancelar', 'stop', 'parar'].includes(cmd)) { setVoiceStep(null); speak("Ok"); return; }
+                    if (isForm) {
+                        if (voiceStep === 'name') { document.getElementById('pName').value = cmd; setVoiceStep('stock'); startVoice(lang === 'es' ? "¿Cuántos?" : "How many?", true); }
+                        else if (voiceStep === 'stock') { document.getElementById('pStock').value = parseInt(cmd)||1; setVoiceStep(null); speak("Listo"); }
+                        else { setVoiceStep('name'); startVoice(lang === 'es' ? "¿Qué producto?" : "Which product?", true); }
+                    } else {
+                        const p = products.find(i => cmd.includes(i.name.toLowerCase()));
+                        if (p) speak(`${p.stock} de ${p.name}`);
+                    }
+                };
+                if (msg) speak(msg, () => rec.start()); else rec.start();
+            };
+
+            const QRModal = () => (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-pop">
+                    <div className="glass p-10 rounded-4xl text-center max-w-sm w-full">
+                        <h3 className="text-xl font-bold mb-6">QR Sync</h3>
+                        <div id="qr-dest" className="bg-white p-4 rounded-3xl mx-auto mb-6 w-fit"></div>
+                        <button onClick={() => setShowQR(false)} className="w-full p-4 bg-brand text-white rounded-2xl font-bold">Cerrar</button>
+                    </div>
+                </div>
+            );
+            
+            useEffect(() => { if(showQR) { const dest = document.getElementById('qr-dest'); if(dest) { dest.innerHTML = ''; new QRCode(dest, { text: JSON.stringify(products.slice(0,10)), width: 200, height: 200 }); } } }, [showQR]);
+
+            // --- Sub-Views ---
+            const PantryView = () => (
+                <div className="flex flex-col gap-6 animate-pop">
+                    <div className="relative"><Icon name="Search" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input type="text" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-12 pr-4 py-4 glass rounded-3xl outline-none focus:ring-4 ring-brand/10 font-medium" /></div>
+                    <div className="grid gap-3">
+                        {products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => (
+                            <div key={p.id} onClick={() => setEditing(p)} className="glass p-4 rounded-4xl flex items-center gap-4 transition-all hover:bg-brand/5 cursor-pointer">
+                                <div className={`w-14 h-14 rounded-3xl flex items-center justify-center text-xl ${CATEGORIES.find(c => c.id === p.category)?.bg || 'bg-slate-100'} ${CATEGORIES.find(c => c.id === p.category)?.color || 'text-slate-400'}`}><Icon name={CATEGORIES.find(c => c.id === p.category)?.icon || 'Package'} /></div>
+                                <div className="flex-1 min-w-0"><h3 className="font-bold truncate">{p.name}</h3><p className="text-xs text-slate-400 font-bold uppercase">{p.stock} Unidades</p>
+                                    <div className="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-700 ${p.stock <= p.min ? 'bg-danger' : 'bg-brand'}`} style={{ width: `${Math.min(100, (p.stock/(p.min*2||1))*100)}%` }}></div></div>
+                                </div>
+                                <Icon name="ChevronRight" className="text-slate-200" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const StatsView = () => {
+                const canvasRef = useRef(null);
+                useEffect(() => { if(canvasRef.current) { new Chart(canvasRef.current, { type: 'doughnut', data: { labels: CATEGORIES.map(c => c.id), datasets: [{ data: CATEGORIES.map(c => products.filter(p => p.category === c.id).length), backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#f59e0b', '#6366f1', '#ec4899'], borderWidth: 0 }] }, options: { cutout: '80%', plugins: { legend: { display: false } } } }); } }, []);
+                return (
+                    <div className="flex flex-col gap-6 animate-pop">
+                        <div className="glass p-8 rounded-4xl flex items-center justify-between">
+                            <div><h2 className="text-3xl font-black text-brand tracking-tighter">{products.length}</h2><p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Items</p>
+                                <div className="mt-4 flex flex-col gap-1">
+                                    {stats.low > 0 && <p className="text-[10px] font-black text-danger uppercase flex items-center gap-1"><Icon name="AlertCircle" size={10} /> {stats.low} {t.lowItems}</p>}
+                                    {stats.expiring > 0 && <p className="text-[10px] font-black text-orange-500 uppercase flex items-center gap-1"><Icon name="Clock" size={10} /> {stats.expiring} {t.expiry}</p>}
+                                </div>
+                            </div>
+                            <div className="chart-container"><canvas ref={canvasRef}></canvas></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="glass p-6 rounded-4xl text-center"><Icon name="Wallet" className="text-secondary mb-2 mx-auto" /><h4 className="text-xl font-black">{currency}{stats.totalVal.toFixed(0)}</h4><p className="text-[10px] font-bold text-slate-400 uppercase">Valor Total</p></div>
+                            <div className="glass p-6 rounded-4xl text-center"><Icon name="Zap" className="text-brand mb-2 mx-auto" /><h4 className="text-xl font-black">{stats.totalVal > 0 ? 'Pro' : 'Start'}</h4><p className="text-[10px] font-bold text-slate-400 uppercase">Estatus</p></div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const AddView = () => {
+                const [selCat, setSelCat] = useState('General');
+                return (
+                    <div className="glass p-8 rounded-4xl flex flex-col gap-5 animate-pop">
+                        <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tight">{t.add}</h2><div className="flex gap-2">
+                            <button onClick={() => startVoice(null, true)} className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isListening ? 'bg-danger text-white animate-pulse' : 'bg-brand/10 text-brand'}`}><Icon name="Mic" /></button>
+                            <button onClick={runAIScan} className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center"><Icon name="Eye" /></button>
+                        </div></div>
+                        <input id="pName" placeholder="Nombre (Ej. Leche)" className="w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none focus:ring-4 ring-brand/10 font-medium" />
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">{CATEGORIES.map(c => <button key={c.id} onClick={() => setSelCat(c.id)} className={`flex-1 min-w-[70px] p-3 rounded-2xl flex flex-col items-center gap-1 transition-all ${selCat === c.id ? 'bg-brand text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-900 text-slate-400'}`}><Icon name={c.icon} size={16} /><span className="text-[9px] font-bold">{c.id}</span></button>)}</div>
+                        <div className="grid grid-cols-2 gap-4"><input id="pStock" type="number" placeholder="Stock" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /><input id="pMin" type="number" placeholder="Min" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /></div>
+                        <div className="grid grid-cols-2 gap-4"><input id="pPrice" type="number" placeholder="Precio" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium" /><input id="pExpiry" type="date" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl outline-none font-medium text-xs" /></div>
+                        <button onClick={() => { const n = document.getElementById('pName').value, s = document.getElementById('pStock').value, m = document.getElementById('pMin').value, p = document.getElementById('pPrice').value, e = document.getElementById('pExpiry').value; if(n) addProduct({ name: n, stock: parseFloat(s)||1, min: parseFloat(m)||1, price: parseFloat(p)||0, expiry: e, category: selCat }); }} className="mt-4 p-5 bg-brand text-white rounded-3xl font-black shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"><Icon name="PlusCircle" /> {t.save}</button>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-xl mx-auto min-h-screen px-6 pt-10 pb-32">
+                    {toast && <Toast toast={toast} />}
+                    {showQR && <QRModal />}
+                    
+                    <header className="flex justify-between items-center mb-10">
+                        <div className="flex items-center gap-4"><div className="w-14 h-14 rounded-3xl bg-brand flex items-center justify-center text-white shadow-xl shadow-emerald-200"><Icon name="Zap" size={28} /></div>
+                        <div><h1 className="text-2xl font-black tracking-tighter text-slate-800 dark:text-white leading-none uppercase">Alacena<span className="text-brand"> Pro</span></h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Inventory</p></div></div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setDarkMode(!darkMode)} className="w-11 h-11 glass rounded-2xl flex items-center justify-center text-slate-400"><Icon name={darkMode ? "Sun" : "Moon"} size={18} /></button>
+                            <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="w-11 h-11 glass rounded-2xl font-bold text-xs text-slate-500 uppercase">{lang}</button>
+                        </div>
+                    </header>
+
+                    {activeTab === 'pantry' && <PantryView />}
+                    {activeTab === 'add' && <AddView />}
+                    {activeTab === 'stats' && <StatsView />}
+                    {activeTab === 'cart' && (
+                        <div className="animate-pop">
+                            <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black">{t.cart}</h2><button onClick={shareList} className="bg-brand text-white px-5 py-2 rounded-2xl text-xs font-black shadow-lg">SHARE 📤</button></div>
+                            <div className="grid gap-3">
+                                {products.filter(p => p.stock <= (p.min || 1)).map(p => (
+                                    <div key={p.id} className="glass p-5 rounded-4xl flex justify-between items-center animate-pop">
+                                        <div className="flex items-center gap-4"><Icon name={CATEGORIES.find(c => c.id === p.category)?.icon || 'Package'} className="text-brand" /><h3 className="font-bold">{p.name}</h3></div>
+                                        <div className="text-right"><p className="text-[10px] font-black text-danger uppercase">Critico</p><p className="font-bold">{p.stock} / {p.min}</p></div>
+                                    </div>
+                                ))}
+                                {products.filter(p => p.stock <= (p.min || 1)).length === 0 && <p className="py-20 text-center text-slate-400 font-bold">✨ Todo en orden</p>}
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'profile' && (
+                        <div className="flex flex-col gap-6 animate-pop">
+                            <div className="glass p-10 rounded-4xl flex flex-col items-center text-center gap-4 relative">
+                                <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 overflow-hidden">{profile.avatar ? <img src={profile.avatar} className="w-full h-full object-cover" /> : <Icon name="User" size={48} />}</div>
+                                <input value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="text-xl font-black bg-transparent text-center border-b border-transparent focus:border-brand outline-none" />
+                                <input placeholder="Avatar URL" value={profile.avatar} onChange={e => setProfile({...profile, avatar: e.target.value})} className="text-[9px] text-slate-400 bg-transparent text-center outline-none w-full" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setCurrency(prompt("Symbol:", currency) || currency)} className="glass p-6 rounded-4xl flex flex-col items-center gap-2"><Icon name="Coins" className="text-secondary" /><span className="text-[10px] font-black uppercase">{t.currency} ({currency})</span></button>
+                                <button onClick={() => setShowQR(true)} className="glass p-6 rounded-4xl flex flex-col items-center gap-2"><Icon name="QrCode" className="text-brand" /><span className="text-[10px] font-black uppercase">Sync QR</span></button>
+                                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="glass p-6 rounded-4xl flex flex-col items-center gap-2 text-danger col-span-2"><Icon name="Trash2" /><span className="text-[10px] font-black uppercase">{t.deleteAll}</span></button>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] glass rounded-4xl p-3 flex justify-around shadow-2xl z-50 border-white/20">
+                        {[ { id: 'pantry', icon: 'LayoutGrid' }, { id: 'stats', icon: 'BarChart3' }, { id: 'add', icon: 'PlusCircle' }, { id: 'cart', icon: 'ShoppingCart' }, { id: 'profile', icon: 'Settings' } ].map(tab => (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`p-3 transition-all duration-300 flex items-center justify-center rounded-2xl ${activeTab === tab.id ? 'bg-brand text-white shadow-xl shadow-emerald-200 -translate-y-2 scale-110' : 'text-slate-300 hover:text-slate-500'}`}><Icon name={tab.icon} size={24} /></button>
+                        ))}
+                    </nav>
+
+                    {editing && (
+                        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-pop">
+                            <div className="glass w-full max-w-sm p-10 rounded-[3rem] shadow-2xl relative border-white/40">
+                                <button onClick={() => setEditing(null)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-danger"><Icon name="X" /></button>
+                                <h2 className="text-2xl font-black mb-8 tracking-tighter">{t.edit}</h2>
+                                <div className="flex flex-col gap-5">
+                                    <input value={editing.name} onChange={e => setEditing({...editing, name: e.target.value})} className="w-full p-4 glass rounded-3xl outline-none font-bold text-lg" />
+                                    <div className="grid grid-cols-2 gap-4"><input type="number" value={editing.stock} onChange={e => setEditing({...editing, stock: parseFloat(e.target.value)||0})} className="p-4 glass rounded-3xl outline-none font-bold" /><input type="number" value={editing.min} onChange={e => setEditing({...editing, min: parseFloat(e.target.value)||0})} className="p-4 glass rounded-3xl outline-none font-bold" /></div>
+                                    <button onClick={() => { setProducts(products.map(p => p.id === editing.id ? editing : p)); setEditing(null); showToast("Ok!"); }} className="mt-4 p-5 bg-brand text-white rounded-3xl font-black shadow-xl shadow-emerald-200 active:scale-95">{t.save}</button>
+                                    <button onClick={() => { setProducts(products.filter(p => p.id !== editing.id)); setEditing(null); }} className="text-danger font-bold text-xs uppercase p-2">{t.delete}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    </script>
 </body>
 </html>
